@@ -24,7 +24,7 @@ export const providerApplicationSchema = z.object({
   company_description_en: z.string().optional(),
   contact_email: z.string().email('البريد الإلكتروني غير صالح'),
   contact_phone: z.string().min(9, 'رقم الهاتف مطلوب'),
-  terms_accepted: z.literal(true, { errorMap: () => ({ message: 'يجب الموافقة على الشروط والأحكام' }) }),
+  terms_accepted: z.literal(true, { message: 'يجب الموافقة على الشروط والأحكام' }),
 })
 
 export const tripSchema = z.object({

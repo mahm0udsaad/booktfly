@@ -1,6 +1,6 @@
 'use client'
 
-import { useEffect, useState } from 'react'
+import { Suspense, useEffect, useState } from 'react'
 import { useLocale, useTranslations } from 'next-intl'
 import { createClient } from '@/lib/supabase/client'
 import Link from 'next/link'
@@ -10,6 +10,14 @@ import type { ProviderApplication } from '@/types'
 import { Eye } from 'lucide-react'
 
 export default function AdminApplications() {
+  return (
+    <Suspense>
+      <AdminApplicationsContent />
+    </Suspense>
+  )
+}
+
+function AdminApplicationsContent() {
   const t = useTranslations()
   const locale = useLocale()
   const supabase = createClient()

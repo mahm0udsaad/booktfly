@@ -69,7 +69,7 @@ export async function POST(request: NextRequest) {
     const parsed = providerApplicationSchema.safeParse(rawData)
     if (!parsed.success) {
       return NextResponse.json(
-        { data: null, error: parsed.error.errors[0]?.message || 'Invalid input' },
+        { data: null, error: parsed.error.issues[0]?.message || 'Invalid input' },
         { status: 400 }
       )
     }

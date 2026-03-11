@@ -1,6 +1,6 @@
 'use client'
 
-import { useEffect, useState } from 'react'
+import { Suspense, useEffect, useState } from 'react'
 import { useLocale, useTranslations } from 'next-intl'
 import { useParams, useRouter, useSearchParams } from 'next/navigation'
 import { useForm } from 'react-hook-form'
@@ -38,6 +38,14 @@ const bookingFormSchema = z.object({
 type BookingFormData = z.infer<typeof bookingFormSchema>
 
 export default function BookTripPage() {
+  return (
+    <Suspense>
+      <BookTripContent />
+    </Suspense>
+  )
+}
+
+function BookTripContent() {
   const t = useTranslations()
   const locale = useLocale()
   const isAr = locale === 'ar'
