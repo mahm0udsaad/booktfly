@@ -1,59 +1,92 @@
 import { z } from 'zod'
 
-export const signupSchema = z.object({
-  full_name: z.string().min(2, 'الاسم مطلوب'),
-  email: z.string().email('البريد الإلكتروني غير صالح'),
-  password: z.string().min(6, 'كلمة المرور يجب أن تكون 6 أحرف على الأقل'),
-  phone: z.string().optional(),
-})
+import ar from '@/messages/ar.json'
+import en from '@/messages/en.json'
 
-export const loginSchema = z.object({
-  email: z.string().email('البريد الإلكتروني غير صالح'),
-  password: z.string().min(1, 'كلمة المرور مطلوبة'),
-})
+type Locale = 'ar' | 'en'
 
-export const magicLinkSchema = z.object({
-  email: z.string().email('البريد الإلكتروني غير صالح'),
-})
+const messages = { ar, en } as const
 
-export const providerApplicationSchema = z.object({
-  provider_type: z.enum(['travel_agency', 'hajj_umrah']),
-  company_name_ar: z.string().min(2, 'اسم الشركة بالعربية مطلوب'),
-  company_name_en: z.string().optional(),
-  company_description_ar: z.string().optional(),
-  company_description_en: z.string().optional(),
-  contact_email: z.string().email('البريد الإلكتروني غير صالح'),
-  contact_phone: z.string().min(9, 'رقم الهاتف مطلوب'),
-  terms_accepted: z.literal(true, { message: 'يجب الموافقة على الشروط والأحكام' }),
-})
+function v(locale: Locale, key: keyof typeof ar.validation): string {
+  return messages[locale].validation[key]
+}
 
-export const tripSchema = z.object({
-  airline: z.string().min(1, 'اسم شركة الطيران مطلوب'),
-  flight_number: z.string().optional(),
-  origin_city_ar: z.string().min(1, 'مدينة المغادرة مطلوبة'),
-  origin_city_en: z.string().optional(),
-  origin_code: z.string().optional(),
-  destination_city_ar: z.string().min(1, 'مدينة الوصول مطلوبة'),
-  destination_city_en: z.string().optional(),
-  destination_code: z.string().optional(),
-  departure_at: z.string().min(1, 'تاريخ المغادرة مطلوب'),
-  return_at: z.string().optional(),
-  trip_type: z.enum(['one_way', 'round_trip']),
-  cabin_class: z.enum(['economy', 'business', 'first']),
-  total_seats: z.number().min(1, 'عدد المقاعد مطلوب'),
-  price_per_seat: z.number().min(1, 'السعر مطلوب'),
-  description_ar: z.string().optional(),
-  description_en: z.string().optional(),
-})
+export function getSignupSchema(locale: Locale = 'ar') {
+  return z.object({
+    full_name: z.string().min(2, v(locale, 'name_required')),
+    email: z.string().email(v(locale, 'email_invalid')),
+    password: z.string().min(6, v(locale, 'password_min')),
+    phone: z.string().optional(),
+  })
+}
 
-export const bookingSchema = z.object({
-  trip_id: z.string().uuid(),
-  passenger_name: z.string().min(2, 'اسم المسافر مطلوب'),
-  passenger_phone: z.string().min(9, 'رقم الهاتف مطلوب'),
-  passenger_email: z.string().email('البريد الإلكتروني غير صالح'),
-  passenger_id_number: z.string().optional(),
-  seats_count: z.number().min(1).max(10),
-})
+export function getLoginSchema(locale: Locale = 'ar') {
+  return z.object({
+    email: z.string().email(v(locale, 'email_invalid')),
+    password: z.string().min(1, v(locale, 'password_required')),
+  })
+}
+
+export function getMagicLinkSchema(locale: Locale = 'ar') {
+  return z.object({
+    email: z.string().email(v(locale, 'email_invalid')),
+  })
+}
+
+export function getProviderApplicationSchema(locale: Locale = 'ar') {
+  return z.object({
+    provider_type: z.enum(['travel_agency', 'hajj_umrah']),
+    company_name_ar: z.string().min(2, v(locale, 'company_name_ar_required')),
+    company_name_en: z.string().optional(),
+    company_description_ar: z.string().optional(),
+    company_description_en: z.string().optional(),
+    contact_email: z.string().email(v(locale, 'email_invalid')),
+    contact_phone: z.string().min(9, v(locale, 'phone_required')),
+    terms_accepted: z.literal(true, { message: v(locale, 'terms_required') }),
+  })
+}
+
+export function getTripSchema(locale: Locale = 'ar') {
+  return z.object({
+    airline: z.string().min(1, v(locale, 'airline_required')),
+    flight_number: z.string().optional(),
+    origin_city_ar: z.string().min(1, v(locale, 'origin_required')),
+    origin_city_en: z.string().optional(),
+    origin_code: z.string().optional(),
+    destination_city_ar: z.string().min(1, v(locale, 'destination_required')),
+    destination_city_en: z.string().optional(),
+    destination_code: z.string().optional(),
+    departure_at: z.string().min(1, v(locale, 'departure_required')),
+    return_at: z.string().optional(),
+    trip_type: z.enum(['one_way', 'round_trip']),
+    cabin_class: z.enum(['economy', 'business', 'first']),
+    total_seats: z.number().min(1, v(locale, 'seats_required')),
+    price_per_seat: z.number().min(1, v(locale, 'price_required')),
+    description_ar: z.string().optional(),
+    description_en: z.string().optional(),
+  })
+}
+
+export function getBookingSchema(locale: Locale = 'ar') {
+  return z.object({
+    trip_id: z.string().uuid(),
+    passenger_name: z.string().min(2, v(locale, 'passenger_name_required')),
+    passenger_phone: z.string().min(9, v(locale, 'passenger_phone_required')),
+    passenger_email: z.string().email(v(locale, 'passenger_email_invalid')),
+    passenger_id_number: z.string().optional(),
+    seats_count: z.number().min(1).max(10),
+  })
+}
+
+export function getUpdatePasswordSchema(locale: Locale = 'ar') {
+  return z.object({
+    password: z.string().min(6, v(locale, 'new_password_min')),
+    confirmPassword: z.string(),
+  }).refine((data) => data.password === data.confirmPassword, {
+    message: v(locale, 'passwords_mismatch'),
+    path: ['confirmPassword'],
+  })
+}
 
 export const adminReviewSchema = z.object({
   action: z.enum(['approve', 'reject']),
@@ -65,3 +98,12 @@ export const platformSettingsSchema = z.object({
   terms_content_ar: z.string().optional(),
   terms_content_en: z.string().optional(),
 })
+
+// Default Arabic schemas for backward compatibility (used in API routes)
+export const signupSchema = getSignupSchema('ar')
+export const loginSchema = getLoginSchema('ar')
+export const magicLinkSchema = getMagicLinkSchema('ar')
+export const providerApplicationSchema = getProviderApplicationSchema('ar')
+export const tripSchema = getTripSchema('ar')
+export const bookingSchema = getBookingSchema('ar')
+export const updatePasswordSchema = getUpdatePasswordSchema('ar')

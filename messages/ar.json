@@ -14,6 +14,7 @@
     "delete": "حذف",
     "edit": "تعديل",
     "back": "رجوع",
+    "retry": "حاول مجدداً",
     "next": "التالي",
     "search": "بحث",
     "filter": "تصفية",
@@ -125,7 +126,8 @@
     "price_per_seat": "سعر المقعد",
     "total_seats": "إجمالي المقاعد",
     "posted_by": "بواسطة",
-    "no_trips": "لا توجد رحلات متاحة حالياً"
+    "no_trips": "لا توجد رحلات متاحة في الوقت الحالي. يرجى التحقق لاحقاً.",
+    "availability": "التوفر"
   },
   "booking": {
     "title": "إتمام الحجز",
@@ -179,7 +181,8 @@
     "net_payout": "صافي المستحقات",
     "platform_commission": "عمولة المنصة",
     "no_trips_yet": "لم تقم بإضافة أي رحلات بعد",
-    "post_first_trip": "أضف رحلتك الأولى"
+    "post_first_trip": "أضف رحلتك الأولى",
+    "loading_dashboard": "جارٍ تحميل لوحة التحكم..."
   },
   "become_provider": {
     "title": "انضم كمزود خدمة",
@@ -313,6 +316,26 @@
     "stats_trips": "رحلة متاحة",
     "stats_providers": "مزود خدمة معتمد",
     "stats_travelers": "مسافر استفاد من خدماتنا"
+  },
+  "validation": {
+    "name_required": "الاسم مطلوب",
+    "email_invalid": "البريد الإلكتروني غير صالح",
+    "password_min": "كلمة المرور يجب أن تكون 6 أحرف على الأقل",
+    "password_required": "كلمة المرور مطلوبة",
+    "company_name_ar_required": "اسم الشركة بالعربية مطلوب",
+    "phone_required": "رقم الهاتف مطلوب",
+    "terms_required": "يجب الموافقة على الشروط والأحكام",
+    "airline_required": "اسم شركة الطيران مطلوب",
+    "origin_required": "مدينة المغادرة مطلوبة",
+    "destination_required": "مدينة الوصول مطلوبة",
+    "departure_required": "تاريخ المغادرة مطلوب",
+    "seats_required": "عدد المقاعد مطلوب",
+    "price_required": "السعر مطلوب",
+    "passenger_name_required": "اسم المسافر مطلوب",
+    "passenger_phone_required": "رقم الهاتف مطلوب",
+    "passenger_email_invalid": "البريد الإلكتروني غير صالح",
+    "passwords_mismatch": "كلمتا المرور غير متطابقتين",
+    "new_password_min": "كلمة المرور الجديدة يجب أن تكون 6 أحرف على الأقل"
   },
   "footer": {
     "about": "عن BookitFly",

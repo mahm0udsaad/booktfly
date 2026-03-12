@@ -17,6 +17,8 @@ import {
   Armchair,
   Loader2,
   ArrowRight,
+  TrendingUp,
+  ArrowLeft
 } from 'lucide-react'
 
 type Stats = {
@@ -31,6 +33,9 @@ export default function ProviderDashboardPage() {
   const ts = useTranslations('status')
   const tc = useTranslations('common')
   const locale = useLocale()
+  const isAr = locale === 'ar'
+  const Arrow = isAr ? ArrowLeft : ArrowRight
+
   const { user } = useUser()
   const { provider, loading: providerLoading } = useProvider(user?.id)
   const [stats, setStats] = useState<Stats>({
@@ -110,83 +115,113 @@ export default function ProviderDashboardPage() {
 
   if (providerLoading || loading) {
     return (
-      <div className="flex items-center justify-center py-20">
-        <Loader2 className="h-8 w-8 animate-spin text-primary" />
+      <div className="flex flex-col items-center justify-center py-32 animate-fade-in-up">
+        <Loader2 className="h-10 w-10 animate-spin text-primary mb-4" />
+        <p className="text-slate-500 font-medium">{t('loading_dashboard') || 'Loading Dashboard...'}</p>
       </div>
     )
   }
 
   const statCards = [
-    { label: t('active_trips'), value: stats.activeTrips, icon: Plane },
-    { label: t('total_bookings'), value: stats.totalBookings, icon: BookOpen },
-    {
-      label: t('monthly_revenue'),
-      value: formatPrice(stats.monthlyRevenue),
-      icon: DollarSign,
-    },
-    { label: t('seats_sold'), value: stats.seatsSold, icon: Armchair },
+    { label: t('active_trips'), value: stats.activeTrips, icon: Plane, color: 'text-primary', bg: 'bg-primary/10' },
+    { label: t('total_bookings'), value: stats.totalBookings, icon: BookOpen, color: 'text-accent', bg: 'bg-accent/10' },
+    { label: t('monthly_revenue'), value: formatPrice(stats.monthlyRevenue), icon: DollarSign, color: 'text-emerald-500', bg: 'bg-emerald-500/10' },
+    { label: t('seats_sold'), value: stats.seatsSold, icon: Armchair, color: 'text-amber-500', bg: 'bg-amber-500/10' },
   ]
 
   return (
-    <div className="space-y-8">
-      <h1 className="text-2xl font-bold">{t('dashboard')}</h1>
+    <div className="space-y-10 max-w-7xl mx-auto animate-fade-in-up">
+      <div className="flex items-center justify-between">
+          <div>
+            <h1 className="text-3xl font-black text-slate-900 tracking-tight">{t('dashboard')}</h1>
+            <p className="text-slate-500 font-medium mt-1">{isAr ? 'مرحباً بعودتك إلى لوحة التحكم' : 'Welcome back to your dashboard'}</p>
+          </div>
+          <Link 
+            href={`/${locale}/provider/trips/new`} 
+            className="hidden sm:flex items-center gap-2 px-5 py-2.5 rounded-xl bg-slate-900 text-white font-bold hover:bg-slate-800 transition-colors shadow-sm hover:shadow-md"
+           >
+            <Plane className="h-4 w-4" />
+            {isAr ? 'رحلة جديدة' : 'New Trip'}
+          </Link>
+      </div>
 
       {/* Stat Cards */}
-      <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
-        {statCards.map((card) => (
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
+        {statCards.map((card, idx) => (
           <div
             key={card.label}
-            className="bg-card border rounded-xl p-5 space-y-2"
+            className="group bg-white border border-slate-200 rounded-[2rem] p-6 shadow-sm hover:shadow-xl transition-all duration-300 hover:-translate-y-1 animate-fade-in-up"
+            style={{ animationDelay: `${idx * 100}ms` }}
           >
-            <div className="flex items-center gap-2 text-muted-foreground">
-              <card.icon className="h-4 w-4" />
-              <span className="text-sm">{card.label}</span>
+            <div className="flex items-start justify-between mb-4">
+              <div className={cn("h-12 w-12 rounded-2xl flex items-center justify-center transition-transform group-hover:scale-110", card.bg)}>
+                <card.icon className={cn("h-6 w-6", card.color)} />
+              </div>
+              <div className="h-8 w-8 rounded-full bg-slate-50 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity">
+                 <TrendingUp className="h-4 w-4 text-slate-400" />
+              </div>
             </div>
-            <p className="text-2xl font-bold">{card.value}</p>
+            <div>
+              <p className="text-sm font-bold text-slate-400 uppercase tracking-widest mb-1">{card.label}</p>
+              <p className="text-3xl font-black text-slate-900 tracking-tighter">{card.value}</p>
+            </div>
           </div>
         ))}
       </div>
 
       {/* Recent Bookings */}
-      <div className="bg-card border rounded-xl">
-        <div className="flex items-center justify-between p-5 border-b">
-          <h2 className="font-semibold">{t('recent_activity')}</h2>
+      <div className="bg-white border border-slate-200 rounded-[2rem] shadow-sm overflow-hidden animate-fade-in-up" style={{ animationDelay: '400ms' }}>
+        <div className="flex items-center justify-between p-6 md:p-8 border-b border-slate-100 bg-slate-50/50">
+          <h2 className="text-lg font-black text-slate-900">{t('recent_activity')}</h2>
           <Link
             href={`/${locale}/provider/bookings`}
-            className="text-sm text-primary hover:underline inline-flex items-center gap-1"
+            className="group flex items-center gap-2 px-4 py-2 rounded-xl bg-white border border-slate-200 text-sm font-bold text-slate-700 hover:bg-slate-50 transition-colors shadow-sm"
           >
             {tc('view_all')}
-            <ArrowRight className="h-3.5 w-3.5" />
+            <Arrow className="h-4 w-4 rtl:rotate-180 group-hover:translate-x-1 rtl:group-hover:-translate-x-1 transition-transform" />
           </Link>
         </div>
-        <div className="divide-y">
+        
+        <div className="divide-y divide-slate-100">
           {recentBookings.length === 0 ? (
-            <div className="p-8 text-center text-muted-foreground text-sm">
-              {tc('no_results')}
+            <div className="p-12 text-center flex flex-col items-center justify-center">
+              <div className="h-16 w-16 bg-slate-50 rounded-full flex items-center justify-center mb-4">
+                  <BookOpen className="h-8 w-8 text-slate-300" />
+              </div>
+              <p className="text-slate-500 font-medium">{tc('no_results')}</p>
             </div>
           ) : (
             recentBookings.map((booking) => (
               <div
                 key={booking.id}
-                className="flex items-center justify-between gap-4 p-4"
+                className="flex items-center justify-between gap-4 p-6 md:p-8 hover:bg-slate-50 transition-colors group"
               >
-                <div className="min-w-0">
-                  <p className="text-sm font-medium truncate">
-                    {booking.passenger_name}
-                  </p>
-                  <p className="text-xs text-muted-foreground truncate">
-                    {booking.trip?.origin_city_ar} → {booking.trip?.destination_city_ar}{' '}
-                    &middot; {booking.seats_count} {tc('seats')}
-                  </p>
+                <div className="flex items-center gap-5 min-w-0">
+                  <div className="hidden sm:flex h-12 w-12 rounded-full bg-primary/5 border border-primary/10 items-center justify-center shrink-0">
+                      <span className="text-primary font-black text-sm">{booking.passenger_name.charAt(0)}</span>
+                  </div>
+                  <div>
+                    <p className="text-base font-bold text-slate-900 truncate mb-1">
+                      {booking.passenger_name}
+                    </p>
+                    <div className="flex items-center gap-2 text-sm font-medium text-slate-500 truncate">
+                      <span className="font-bold text-slate-700">{booking.trip?.origin_code}</span>
+                      <ArrowRight className="h-3 w-3 rtl:rotate-180 text-slate-300" />
+                      <span className="font-bold text-slate-700">{booking.trip?.destination_code}</span>
+                      <span className="px-2 py-0.5 rounded bg-slate-100 text-xs ml-2">
+                         {booking.seats_count} {tc('seats')}
+                      </span>
+                    </div>
+                  </div>
                 </div>
-                <div className="text-end shrink-0">
-                  <p className="text-sm font-medium">
+                <div className="flex flex-col items-end gap-2 shrink-0">
+                  <p className="text-lg font-black text-slate-900">
                     {formatPrice(booking.total_amount)}
                   </p>
                   <span
                     className={cn(
-                      'text-xs px-2 py-0.5 rounded-full',
-                      BOOKING_STATUS_COLORS[booking.status] || ''
+                      'text-xs font-bold px-3 py-1 rounded-full uppercase tracking-wider',
+                      BOOKING_STATUS_COLORS[booking.status] || 'bg-slate-100 text-slate-600'
                     )}
                   >
                     {ts(booking.status)}

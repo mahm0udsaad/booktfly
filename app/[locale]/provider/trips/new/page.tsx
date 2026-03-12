@@ -6,7 +6,7 @@ import { zodResolver } from '@hookform/resolvers/zod'
 import { useTranslations, useLocale } from 'next-intl'
 import { useRouter } from 'next/navigation'
 import { z } from 'zod'
-import { tripSchema } from '@/lib/validations'
+import { getTripSchema } from '@/lib/validations'
 import { toast } from '@/components/ui/toaster'
 import { cn } from '@/lib/utils'
 import {
@@ -16,13 +16,13 @@ import {
   X,
 } from 'lucide-react'
 
-type FormData = z.infer<typeof tripSchema>
+type FormData = z.infer<ReturnType<typeof getTripSchema>>
 
 export default function NewTripPage() {
   const t = useTranslations('provider')
   const tt = useTranslations('trips')
   const tc = useTranslations('common')
-  const locale = useLocale()
+  const locale = useLocale() as 'ar' | 'en'
   const router = useRouter()
   const [submitting, setSubmitting] = useState(false)
   const [imageFile, setImageFile] = useState<File | null>(null)
@@ -34,7 +34,7 @@ export default function NewTripPage() {
     formState: { errors },
     watch,
   } = useForm<FormData>({
-    resolver: zodResolver(tripSchema),
+    resolver: zodResolver(getTripSchema(locale)),
     defaultValues: {
       trip_type: 'one_way',
       cabin_class: 'economy',

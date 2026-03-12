@@ -3,9 +3,13 @@ import { createClient } from '@/lib/supabase/server'
 import { supabaseAdmin } from '@/lib/supabase/admin'
 import { providerApplicationSchema } from '@/lib/validations'
 import { notifyAdmin } from '@/lib/notifications'
+import { rateLimit } from '@/lib/rate-limit'
 
 export async function POST(request: NextRequest) {
   try {
+    const limited = rateLimit(request, { limit: 3, windowMs: 60_000 })
+    if (limited) return limited
+
     // Auth check
     const supabase = await createClient()
     const {

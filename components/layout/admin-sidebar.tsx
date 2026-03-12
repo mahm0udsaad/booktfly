@@ -13,9 +13,12 @@ import {
   Settings,
   Menu,
   X,
+  LogOut
 } from 'lucide-react'
 import { useState } from 'react'
 import { cn } from '@/lib/utils'
+import { createClient } from '@/lib/supabase/client'
+import { useRouter } from 'next/navigation'
 
 const NAV_ITEMS = [
   { key: 'dashboard', icon: LayoutDashboard, href: '/admin' },
@@ -31,6 +34,8 @@ export function AdminSidebar() {
   const t = useTranslations('admin')
   const locale = useLocale()
   const pathname = usePathname()
+  const router = useRouter()
+  const supabase = createClient()
   const [mobileOpen, setMobileOpen] = useState(false)
 
   const isActive = (href: string) => {
@@ -39,29 +44,50 @@ export function AdminSidebar() {
     return pathname === fullPath || pathname.startsWith(fullPath + '/')
   }
 
+  const handleSignOut = async () => {
+    await supabase.auth.signOut()
+    router.push(`/${locale}`)
+    router.refresh()
+  }
+
   const sidebarContent = (
-    <div className="flex flex-col h-full">
-      <div className="p-4 border-b">
-        <h2 className="font-bold text-lg text-primary">{t('dashboard')}</h2>
+    <div className="flex flex-col h-full bg-white">
+      <div className="p-6 border-b border-slate-100">
+        <h2 className="font-black text-2xl text-slate-900 tracking-tight">{t('dashboard')}</h2>
+        <p className="text-xs font-bold text-destructive uppercase tracking-widest mt-1">Admin Panel</p>
       </div>
-      <nav className="flex-1 p-3 space-y-1">
-        {NAV_ITEMS.map((item) => (
-          <Link
-            key={item.key}
-            href={`/${locale}${item.href}`}
-            onClick={() => setMobileOpen(false)}
-            className={cn(
-              'flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium transition-colors',
-              isActive(item.href)
-                ? 'bg-accent text-accent-foreground'
-                : 'text-muted-foreground hover:text-foreground hover:bg-muted'
-            )}
+      
+      <div className="flex-1 overflow-y-auto py-6 px-4 space-y-2">
+        {NAV_ITEMS.map((item) => {
+          const active = isActive(item.href)
+          return (
+            <Link
+              key={item.key}
+              href={`/${locale}${item.href}`}
+              onClick={() => setMobileOpen(false)}
+              className={cn(
+                'group flex items-center gap-4 px-4 py-3.5 rounded-2xl text-sm font-bold transition-all',
+                active
+                  ? 'bg-slate-900 text-white shadow-lg shadow-slate-900/10'
+                  : 'text-slate-500 hover:bg-slate-50 hover:text-slate-900'
+              )}
+            >
+              <item.icon className={cn("h-5 w-5", active ? "text-destructive" : "text-slate-400 group-hover:text-slate-900")} />
+              {t(item.key)}
+            </Link>
+          )
+        })}
+      </div>
+
+      <div className="p-4 border-t border-slate-100">
+         <button
+            onClick={handleSignOut}
+            className="flex items-center gap-4 w-full px-4 py-3.5 rounded-2xl text-sm font-bold text-destructive hover:bg-destructive/10 transition-colors"
           >
-            <item.icon className="h-5 w-5" />
-            {t(item.key)}
-          </Link>
-        ))}
-      </nav>
+            <LogOut className="h-5 w-5" />
+            {locale === 'ar' ? 'تسجيل الخروج' : 'Logout'}
+          </button>
+      </div>
     </div>
   )
 
@@ -69,16 +95,16 @@ export function AdminSidebar() {
     <>
       {/* Mobile toggle */}
       <button
-        className="lg:hidden fixed bottom-4 start-4 z-50 p-3 rounded-full bg-accent text-accent-foreground shadow-lg"
+        className="lg:hidden fixed bottom-6 start-6 z-50 p-4 rounded-full bg-slate-900 text-white shadow-2xl hover:scale-105 transition-transform"
         onClick={() => setMobileOpen(!mobileOpen)}
       >
-        {mobileOpen ? <X className="h-5 w-5" /> : <Menu className="h-5 w-5" />}
+        {mobileOpen ? <X className="h-6 w-6" /> : <Menu className="h-6 w-6" />}
       </button>
 
       {/* Mobile overlay */}
       {mobileOpen && (
         <div
-          className="lg:hidden fixed inset-0 z-40 bg-black/50"
+          className="lg:hidden fixed inset-0 z-40 bg-slate-900/40 backdrop-blur-sm"
           onClick={() => setMobileOpen(false)}
         />
       )}
@@ -86,7 +112,7 @@ export function AdminSidebar() {
       {/* Sidebar */}
       <aside
         className={cn(
-          'fixed lg:sticky top-16 z-40 h-[calc(100vh-4rem)] w-64 bg-white border-e transition-transform duration-300',
+          'fixed lg:sticky top-0 z-40 h-[100vh] w-[280px] bg-white border-e border-slate-200 transition-transform duration-500 ease-[cubic-bezier(0.16,1,0.3,1)] shadow-2xl lg:shadow-none',
           mobileOpen ? 'translate-x-0' : '-translate-x-full lg:translate-x-0',
           locale === 'ar' && !mobileOpen && 'translate-x-full lg:translate-x-0',
           locale === 'ar' && mobileOpen && 'translate-x-0'

@@ -3,6 +3,7 @@ import { createClient } from '@/lib/supabase/server'
 import { supabaseAdmin } from '@/lib/supabase/admin'
 import { notify } from '@/lib/notifications'
 import { shortId } from '@/lib/utils'
+import { rateLimit } from '@/lib/rate-limit'
 
 type RouteParams = {
   params: Promise<{ id: string }>
@@ -10,6 +11,9 @@ type RouteParams = {
 
 export async function POST(_request: NextRequest, { params }: RouteParams) {
   try {
+    const limited = rateLimit(_request, { limit: 5, windowMs: 60_000 })
+    if (limited) return limited
+
     const { id } = await params
     const supabase = await createClient()
 

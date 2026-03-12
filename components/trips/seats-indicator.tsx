@@ -1,7 +1,8 @@
 'use client'
 
-import { useTranslations } from 'next-intl'
+import { useTranslations, useLocale } from 'next-intl'
 import { cn } from '@/lib/utils'
+import { motion } from 'framer-motion'
 
 type SeatsIndicatorProps = {
   totalSeats: number
@@ -17,32 +18,36 @@ export function SeatsIndicator({
   compact = false,
 }: SeatsIndicatorProps) {
   const t = useTranslations('trips')
+  const locale = useLocale()
   const remaining = totalSeats - bookedSeats
   const percentage = totalSeats > 0 ? (bookedSeats / totalSeats) * 100 : 0
 
   const barColor =
     percentage >= 90
-      ? 'bg-destructive'
+      ? 'bg-gradient-to-r from-destructive/80 to-destructive shadow-lg shadow-destructive/20'
       : percentage >= 70
-        ? 'bg-warning'
-        : 'bg-success'
+        ? 'bg-gradient-to-r from-warning/80 to-warning shadow-lg shadow-warning/20'
+        : 'bg-gradient-to-r from-success/80 to-success shadow-lg shadow-success/20'
 
   return (
     <div className={cn('w-full', className)}>
-      <div className="flex items-center justify-between mb-1">
-        <span className={cn('font-medium', compact ? 'text-xs' : 'text-sm')}>
-          {remaining} {t('seats_remaining')}
-        </span>
-        {!compact && (
-          <span className="text-xs text-muted-foreground">
-            {bookedSeats} {t('seats_of')} {totalSeats}
+      {!compact && (
+        <div className="flex items-center justify-between mb-2">
+          <span className="text-sm font-bold text-foreground">
+            {remaining} {t('seats_remaining')}
           </span>
-        )}
-      </div>
-      <div className="w-full bg-muted rounded-full h-2 overflow-hidden">
-        <div
-          className={cn('h-full rounded-full transition-all duration-500', barColor)}
-          style={{ width: `${percentage}%` }}
+          <span className="text-xs font-black text-muted-foreground uppercase tracking-widest">
+            {bookedSeats} / {totalSeats}
+          </span>
+        </div>
+      )}
+      <div className="w-full bg-muted/30 dark:bg-white/5 rounded-full h-2.5 overflow-hidden backdrop-blur-sm border border-white/10">
+        <motion.div
+          initial={{ width: 0 }}
+          whileInView={{ width: `${percentage}%` }}
+          viewport={{ once: true }}
+          transition={{ duration: 1.2, ease: "circOut" }}
+          className={cn('h-full rounded-full transition-all duration-300', barColor)}
         />
       </div>
     </div>

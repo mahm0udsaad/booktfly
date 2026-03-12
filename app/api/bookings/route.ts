@@ -3,9 +3,13 @@ import { createClient } from '@/lib/supabase/server'
 import { supabaseAdmin } from '@/lib/supabase/admin'
 import { bookingSchema } from '@/lib/validations'
 import { DEFAULT_COMMISSION_RATE } from '@/lib/constants'
+import { rateLimit } from '@/lib/rate-limit'
 
 export async function POST(request: NextRequest) {
   try {
+    const limited = rateLimit(request, { limit: 5, windowMs: 60_000 })
+    if (limited) return limited
+
     const supabase = await createClient()
 
     // Check auth

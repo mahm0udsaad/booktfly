@@ -15,6 +15,8 @@ import {
   Plane,
   Eye,
   Filter,
+  ArrowLeft,
+  ArrowRight
 } from 'lucide-react'
 
 export default function ProviderTripsPage() {
@@ -23,6 +25,9 @@ export default function ProviderTripsPage() {
   const ts = useTranslations('status')
   const tc = useTranslations('common')
   const locale = useLocale()
+  const isAr = locale === 'ar'
+  const Arrow = isAr ? ArrowLeft : ArrowRight
+
   const { user } = useUser()
   const { provider, loading: providerLoading } = useProvider(user?.id)
   const [trips, setTrips] = useState<Trip[]>([])
@@ -54,8 +59,9 @@ export default function ProviderTripsPage() {
 
   if (providerLoading || loading) {
     return (
-      <div className="flex items-center justify-center py-20">
-        <Loader2 className="h-8 w-8 animate-spin text-primary" />
+      <div className="flex flex-col items-center justify-center py-32 animate-fade-in-up">
+        <Loader2 className="h-10 w-10 animate-spin text-primary mb-4" />
+        <p className="text-slate-500 font-medium">{tc('loading')}</p>
       </div>
     )
   }
@@ -70,65 +76,75 @@ export default function ProviderTripsPage() {
   ]
 
   return (
-    <div className="space-y-6">
-      <div className="flex items-center justify-between gap-4">
-        <h1 className="text-2xl font-bold">{t('trip_list')}</h1>
+    <div className="space-y-8 max-w-7xl mx-auto animate-fade-in-up">
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-6">
+        <div>
+           <h1 className="text-3xl font-black text-slate-900 tracking-tight mb-2">{t('trip_list')}</h1>
+           <p className="text-slate-500 font-medium">{isAr ? 'إدارة جميع رحلاتك وحالاتها' : 'Manage all your trips and their statuses'}</p>
+        </div>
         <Link
           href={`/${locale}/provider/trips/new`}
-          className="inline-flex items-center gap-2 px-4 py-2.5 bg-primary text-primary-foreground rounded-lg text-sm font-medium hover:bg-primary/90 transition-colors"
+          className="inline-flex items-center justify-center gap-2 px-6 py-3 bg-primary text-white rounded-2xl text-base font-bold hover:bg-primary/90 transition-all shadow-lg shadow-primary/20 hover:-translate-y-0.5"
         >
-          <Plus className="h-4 w-4" />
+          <Plus className="h-5 w-5" />
           {t('new_trip')}
         </Link>
       </div>
 
       {/* Status Filter */}
-      <div className="flex items-center gap-2 overflow-x-auto pb-2">
-        <Filter className="h-4 w-4 text-muted-foreground shrink-0" />
-        {statusOptions.map((status) => (
-          <button
-            key={status}
-            onClick={() => setStatusFilter(status)}
-            className={cn(
-              'px-3 py-1.5 rounded-full text-xs font-medium whitespace-nowrap transition-colors',
-              statusFilter === status
-                ? 'bg-primary text-primary-foreground'
-                : 'bg-muted text-muted-foreground hover:bg-muted/80'
-            )}
-          >
-            {status === 'all' ? tc('filter') + ': ' + tc('view_all') : ts(status)}
-          </button>
-        ))}
+      <div className="flex items-center gap-3 overflow-x-auto pb-4 scrollbar-hide">
+        <div className="h-10 w-10 rounded-xl bg-white border border-slate-200 flex items-center justify-center shrink-0 shadow-sm">
+            <Filter className="h-4 w-4 text-slate-400" />
+        </div>
+        <div className="flex items-center gap-2 bg-white border border-slate-200 p-1.5 rounded-2xl shadow-sm">
+            {statusOptions.map((status) => (
+            <button
+                key={status}
+                onClick={() => setStatusFilter(status)}
+                className={cn(
+                'px-4 py-2 rounded-xl text-sm font-bold whitespace-nowrap transition-all duration-300',
+                statusFilter === status
+                    ? 'bg-slate-900 text-white shadow-md'
+                    : 'bg-transparent text-slate-500 hover:text-slate-900 hover:bg-slate-100'
+                )}
+            >
+                {status === 'all' ? tc('view_all') : ts(status)}
+            </button>
+            ))}
+        </div>
       </div>
 
       {/* Trips Table */}
       {trips.length === 0 ? (
-        <div className="bg-card border rounded-xl p-12 text-center">
-          <Plane className="h-12 w-12 text-muted-foreground mx-auto mb-4" />
-          <p className="text-muted-foreground mb-4">{t('no_trips_yet')}</p>
+        <div className="bg-white border border-slate-200 rounded-[2.5rem] p-16 text-center flex flex-col items-center shadow-sm">
+          <div className="h-20 w-20 bg-slate-50 rounded-full flex items-center justify-center mb-6">
+             <Plane className="h-10 w-10 text-slate-300" />
+          </div>
+          <p className="text-xl font-bold text-slate-900 mb-2">{t('no_trips_yet')}</p>
+          <p className="text-slate-500 mb-8">{isAr ? 'قم بإضافة رحلتك الأولى للبدء في تلقي الحجوزات' : 'Add your first trip to start receiving bookings'}</p>
           <Link
             href={`/${locale}/provider/trips/new`}
-            className="inline-flex items-center gap-2 px-4 py-2.5 bg-primary text-primary-foreground rounded-lg text-sm font-medium hover:bg-primary/90 transition-colors"
+            className="inline-flex items-center gap-2 px-8 py-4 bg-slate-900 text-white rounded-2xl text-base font-bold hover:bg-slate-800 transition-all shadow-xl hover:-translate-y-0.5"
           >
-            <Plus className="h-4 w-4" />
+            <Plus className="h-5 w-5" />
             {t('post_first_trip')}
           </Link>
         </div>
       ) : (
-        <div className="bg-card border rounded-xl overflow-hidden">
+        <div className="bg-white border border-slate-200 rounded-[2rem] overflow-hidden shadow-sm">
           <div className="overflow-x-auto">
-            <table className="w-full text-sm">
-              <thead>
-                <tr className="border-b bg-muted/30">
-                  <th className="text-start p-3 font-medium">{tc('from')} → {tc('to')}</th>
-                  <th className="text-start p-3 font-medium">{tc('date')}</th>
-                  <th className="text-start p-3 font-medium">{tc('seats')}</th>
-                  <th className="text-start p-3 font-medium">{tc('price')}</th>
-                  <th className="text-start p-3 font-medium">{tc('status')}</th>
-                  <th className="text-start p-3 font-medium">{tc('actions')}</th>
+            <table className="w-full text-sm text-left rtl:text-right">
+              <thead className="bg-slate-50/80 border-b border-slate-100">
+                <tr>
+                  <th className="p-5 font-bold text-slate-500 uppercase tracking-widest text-xs">{tc('from')} &middot; {tc('to')}</th>
+                  <th className="p-5 font-bold text-slate-500 uppercase tracking-widest text-xs">{tc('date')}</th>
+                  <th className="p-5 font-bold text-slate-500 uppercase tracking-widest text-xs">{tc('seats')}</th>
+                  <th className="p-5 font-bold text-slate-500 uppercase tracking-widest text-xs">{tc('price')}</th>
+                  <th className="p-5 font-bold text-slate-500 uppercase tracking-widest text-xs">{tc('status')}</th>
+                  <th className="p-5 font-bold text-slate-500 uppercase tracking-widest text-xs text-end">{tc('actions')}</th>
                 </tr>
               </thead>
-              <tbody className="divide-y">
+              <tbody className="divide-y divide-slate-100">
                 {trips.map((trip) => {
                   const seatPercent =
                     trip.total_seats > 0
@@ -136,30 +152,39 @@ export default function ProviderTripsPage() {
                       : 0
 
                   return (
-                    <tr key={trip.id} className="hover:bg-muted/20 transition-colors">
-                      <td className="p-3">
-                        <p className="font-medium">
-                          {locale === 'ar'
-                            ? `${trip.origin_city_ar} → ${trip.destination_city_ar}`
-                            : `${trip.origin_city_en || trip.origin_city_ar} → ${trip.destination_city_en || trip.destination_city_ar}`}
-                        </p>
-                        <p className="text-xs text-muted-foreground">
-                          {trip.airline}
-                          {trip.flight_number && ` - ${trip.flight_number}`}
-                        </p>
+                    <tr key={trip.id} className="hover:bg-slate-50/50 transition-colors group">
+                      <td className="p-5">
+                        <div className="flex items-center gap-3">
+                           <div className="h-10 w-10 rounded-xl bg-slate-100 flex items-center justify-center shrink-0 text-slate-500 group-hover:bg-primary/10 group-hover:text-primary transition-colors">
+                              <Plane className="h-4 w-4 -rotate-45" />
+                           </div>
+                           <div>
+                                <p className="font-bold text-slate-900 text-base mb-0.5 flex items-center gap-2">
+                                {locale === 'ar' ? trip.origin_city_ar : trip.origin_city_en || trip.origin_city_ar}
+                                <Arrow className="h-3 w-3 text-slate-400" />
+                                {locale === 'ar' ? trip.destination_city_ar : trip.destination_city_en || trip.destination_city_ar}
+                                </p>
+                                <p className="text-xs font-semibold text-slate-500 uppercase tracking-wider">
+                                {trip.airline} {trip.flight_number && `• ${trip.flight_number}`}
+                                </p>
+                           </div>
+                        </div>
                       </td>
-                      <td className="p-3 text-muted-foreground">
-                        {new Date(trip.departure_at).toLocaleDateString(
-                          locale === 'ar' ? 'ar-SA' : 'en-US',
-                          { month: 'short', day: 'numeric' }
-                        )}
+                      <td className="p-5">
+                        <span className="inline-flex px-3 py-1.5 rounded-lg bg-slate-50 border border-slate-100 font-medium text-slate-700">
+                            {new Date(trip.departure_at).toLocaleDateString(
+                                locale === 'ar' ? 'ar-SA' : 'en-US',
+                                { month: 'short', day: 'numeric', year: 'numeric' }
+                            )}
+                        </span>
                       </td>
-                      <td className="p-3">
-                        <div className="space-y-1">
-                          <p className="text-xs text-muted-foreground">
-                            {trip.booked_seats}/{trip.total_seats}
-                          </p>
-                          <div className="w-20 h-1.5 bg-muted rounded-full overflow-hidden">
+                      <td className="p-5">
+                        <div className="space-y-2 max-w-[120px]">
+                          <div className="flex justify-between items-center text-xs font-bold text-slate-600">
+                             <span>{trip.booked_seats} {isAr ? 'محجوز' : 'booked'}</span>
+                             <span className="text-slate-400">{trip.total_seats}</span>
+                          </div>
+                          <div className="w-full h-2 bg-slate-100 rounded-full overflow-hidden">
                             <div
                               className="h-full bg-primary rounded-full transition-all"
                               style={{ width: `${seatPercent}%` }}
@@ -167,26 +192,27 @@ export default function ProviderTripsPage() {
                           </div>
                         </div>
                       </td>
-                      <td className="p-3 font-medium">
-                        {formatPrice(trip.price_per_seat)}
+                      <td className="p-5">
+                        <span className="font-black text-slate-900 text-base">
+                            {formatPrice(trip.price_per_seat)}
+                        </span>
                       </td>
-                      <td className="p-3">
+                      <td className="p-5">
                         <span
                           className={cn(
-                            'px-2 py-0.5 rounded-full text-xs font-medium',
-                            TRIP_STATUS_COLORS[trip.status] || ''
+                            'px-3 py-1.5 rounded-lg text-xs font-bold uppercase tracking-widest',
+                            TRIP_STATUS_COLORS[trip.status] || 'bg-slate-100 text-slate-600'
                           )}
                         >
                           {ts(trip.status)}
                         </span>
                       </td>
-                      <td className="p-3">
+                      <td className="p-5 text-end">
                         <Link
                           href={`/${locale}/provider/trips/${trip.id}`}
-                          className="inline-flex items-center gap-1 text-primary hover:underline text-xs"
+                          className="inline-flex items-center justify-center h-10 w-10 rounded-xl bg-white border border-slate-200 text-slate-600 hover:bg-slate-900 hover:text-white hover:border-slate-900 transition-all shadow-sm"
                         >
-                          <Eye className="h-3.5 w-3.5" />
-                          {tc('edit')}
+                          <Eye className="h-4 w-4" />
                         </Link>
                       </td>
                     </tr>

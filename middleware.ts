@@ -71,14 +71,6 @@ export async function middleware(request: NextRequest) {
       }
     }
 
-    // Booking routes require any authenticated user
-    if (isBookingRoute(pathWithoutLocale) && !user) {
-      const locale = localeMatch ? localeMatch[1] : 'ar'
-      const loginUrl = new URL(`/${locale}/auth/login`, request.url)
-      loginUrl.searchParams.set('redirect', pathname)
-      return NextResponse.redirect(loginUrl)
-    }
-
     // Provider routes: check if provider is suspended
     if (pathWithoutLocale.startsWith('/provider') && role === 'provider') {
       const { data: provider } = await supabase

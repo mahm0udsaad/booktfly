@@ -2,14 +2,16 @@
 
 import Link from 'next/link'
 import { useLocale, useTranslations } from 'next-intl'
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import Image from 'next/image'
-import { Menu, X, ChevronDown, LogOut, User, LayoutDashboard } from 'lucide-react'
+import { Menu, X, ChevronDown, LogOut, User, LayoutDashboard, Building2, Plane } from 'lucide-react'
+import { motion, AnimatePresence } from 'framer-motion'
 import { useUser } from '@/hooks/use-user'
 import { LanguageSwitcher } from './language-switcher'
 import { NotificationBell } from './notification-bell'
 import { createClient } from '@/lib/supabase/client'
 import { useRouter } from 'next/navigation'
+import { cn } from '@/lib/utils'
 
 export function Navbar() {
   const t = useTranslations()
@@ -17,8 +19,17 @@ export function Navbar() {
   const { user, profile, loading } = useUser()
   const [mobileOpen, setMobileOpen] = useState(false)
   const [userMenuOpen, setUserMenuOpen] = useState(false)
+  const [scrolled, setScrolled] = useState(false)
   const router = useRouter()
   const supabase = createClient()
+
+  useEffect(() => {
+    const handleScroll = () => {
+      setScrolled(window.scrollY > 20)
+    }
+    window.addEventListener('scroll', handleScroll)
+    return () => window.removeEventListener('scroll', handleScroll)
+  }, [])
 
   const handleSignOut = async () => {
     await supabase.auth.signOut()
@@ -33,116 +44,165 @@ export function Navbar() {
   }
 
   return (
-    <nav className="sticky top-0 z-40 bg-white/80 backdrop-blur-md border-b border-border">
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-        <div className="flex items-center justify-between h-20">
-          {/* Logo */}
-          <Link href={`/${locale}`} className="flex items-center">
-            <Image src="/navbar.png" alt="BooktFly" width={200} height={64} className="h-16 w-auto" priority />
+    <div className="fixed top-0 left-0 right-0 z-50 flex justify-center mt-2 md:mt-4 px-4 sm:px-6 pointer-events-none transition-all duration-500">
+      <nav 
+        className={cn(
+          "pointer-events-auto w-full transition-all duration-500 flex flex-col",
+          scrolled 
+            ? "max-w-5xl rounded-full bg-white/95 backdrop-blur-2xl border border-slate-200 shadow-2xl shadow-slate-200/50" 
+            : "max-w-7xl rounded-none bg-transparent"
+        )}
+      >
+        <div className={cn("flex items-center justify-between transition-all duration-500", scrolled ? "px-4 sm:px-6 py-1" : "px-2 py-1 md:py-2")}>
+          {/* Logo - Visually huge but layout-friendly using negative margins */}
+          <Link href={`/${locale}`} className="relative group flex items-center transition-transform hover:scale-[1.02] active:scale-[0.98] z-50">
+            <Image 
+              src="/navbar.png" 
+              alt="BooktFly" 
+              width={500} 
+              height={150} 
+              className={cn(
+                "w-auto transition-all duration-500 object-contain -my-8 sm:-my-10 lg:-my-12", 
+                scrolled ? "h-20 sm:h-24" : "h-28 sm:h-32 lg:h-36"
+              )} 
+              priority 
+            />
           </Link>
 
           {/* Desktop Nav */}
-          <div className="hidden md:flex items-center gap-6">
+          <div className="hidden md:flex items-center gap-2">
             <Link
               href={`/${locale}/trips`}
-              className="text-sm font-medium text-muted-foreground hover:text-foreground transition-colors"
+              className={cn(
+                "px-6 py-2.5 text-sm font-bold transition-all rounded-xl",
+                scrolled 
+                  ? "text-primary hover:bg-primary/5" 
+                  : "text-primary hover:bg-white/50"
+              )}
             >
               {t('nav.browse_trips')}
             </Link>
             <Link
               href={`/${locale}/become-provider`}
-              className="text-sm font-medium text-muted-foreground hover:text-foreground transition-colors"
+              className={cn(
+                "px-6 py-2.5 text-sm font-bold transition-all rounded-xl",
+                scrolled 
+                  ? "text-primary hover:bg-primary/5" 
+                  : "text-primary hover:bg-white/50"
+              )}
             >
               {t('nav.become_provider')}
             </Link>
           </div>
 
           {/* Right side */}
-          <div className="flex items-center gap-3">
-            <LanguageSwitcher />
+          <div className="flex items-center gap-3 sm:gap-6">
+            <div className="hidden sm:flex items-center">
+               <LanguageSwitcher />
+            </div>
 
             {!loading && (
-              <>
+              <div className="flex items-center gap-2 sm:gap-4">
                 {user && profile ? (
-                  <div className="flex items-center gap-2">
+                  <>
                     <NotificationBell userId={user.id} />
 
                     {/* User dropdown */}
                     <div className="relative">
-                      <button
+                      <motion.button
+                        whileHover={{ scale: 1.02 }}
+                        whileTap={{ scale: 0.98 }}
                         onClick={() => setUserMenuOpen(!userMenuOpen)}
-                        className="flex items-center gap-2 rounded-full bg-secondary px-3 py-1.5 text-sm font-medium hover:bg-secondary/80 transition-colors"
+                        className="flex items-center gap-2 rounded-2xl bg-white border border-slate-200 p-1.5 pe-4 shadow-sm hover:shadow-md transition-all"
                       >
-                        <div className="h-6 w-6 rounded-full bg-accent text-accent-foreground flex items-center justify-center text-xs font-bold">
+                        <div className="h-9 w-9 rounded-xl bg-gradient-to-br from-primary to-accent text-white flex items-center justify-center text-sm font-black shadow-lg shadow-primary/20">
                           {profile.full_name?.[0]?.toUpperCase() || 'U'}
                         </div>
-                        <span className="hidden sm:inline max-w-24 truncate">
+                        <span className="hidden lg:inline text-sm font-bold max-w-[120px] truncate text-primary">
                           {profile.full_name || profile.email}
                         </span>
-                        <ChevronDown className="h-3 w-3" />
-                      </button>
+                        <ChevronDown className={cn("h-4 w-4 text-primary/50 transition-transform duration-300", userMenuOpen && "rotate-180")} />
+                      </motion.button>
 
-                      {userMenuOpen && (
-                        <>
-                          <div
-                            className="fixed inset-0 z-10"
-                            onClick={() => setUserMenuOpen(false)}
-                          />
-                          <div className="absolute end-0 mt-2 w-48 rounded-lg bg-white border shadow-lg z-20">
-                            {getDashboardLink() && (
-                              <Link
-                                href={getDashboardLink()!}
-                                onClick={() => setUserMenuOpen(false)}
-                                className="flex items-center gap-2 px-4 py-2.5 text-sm hover:bg-muted transition-colors"
-                              >
-                                <LayoutDashboard className="h-4 w-4" />
-                                {profile.role === 'admin'
-                                  ? t('nav.admin_panel')
-                                  : t('nav.provider_dashboard')}
-                              </Link>
-                            )}
-                            <Link
-                              href={`/${locale}/my-bookings`}
+                      <AnimatePresence>
+                        {userMenuOpen && (
+                          <>
+                            <motion.div
+                              initial={{ opacity: 0 }}
+                              animate={{ opacity: 1 }}
+                              exit={{ opacity: 0 }}
+                              className="fixed inset-0 z-10"
                               onClick={() => setUserMenuOpen(false)}
-                              className="flex items-center gap-2 px-4 py-2.5 text-sm hover:bg-muted transition-colors"
+                            />
+                            <motion.div
+                              initial={{ opacity: 0, scale: 0.95, y: 10, x: locale === 'ar' ? 20 : -20 }}
+                              animate={{ opacity: 1, scale: 1, y: 0, x: 0 }}
+                              exit={{ opacity: 0, scale: 0.95, y: 10 }}
+                              className="absolute end-0 mt-3 w-64 rounded-2xl bg-white border border-slate-200 shadow-2xl z-20 overflow-hidden p-2 origin-top-right"
                             >
-                              <User className="h-4 w-4" />
-                              {t('nav.my_bookings')}
-                            </Link>
-                            <button
-                              onClick={handleSignOut}
-                              className="flex items-center gap-2 w-full px-4 py-2.5 text-sm text-destructive hover:bg-muted transition-colors"
-                            >
-                              <LogOut className="h-4 w-4" />
-                              {t('common.logout')}
-                            </button>
-                          </div>
-                        </>
-                      )}
+                              <div className="px-4 py-3 bg-muted/30 rounded-xl mb-2">
+                                <p className="text-[10px] font-bold text-muted-foreground uppercase tracking-widest mb-1">{t('common.account')}</p>
+                                <p className="text-sm font-bold truncate text-foreground">{profile.full_name}</p>
+                              </div>
+                              
+                              <div className="space-y-1">
+                                {getDashboardLink() && (
+                                  <Link
+                                    href={getDashboardLink()!}
+                                    onClick={() => setUserMenuOpen(false)}
+                                    className="flex items-center gap-3 px-4 py-2.5 text-sm font-medium hover:bg-muted rounded-xl transition-colors"
+                                  >
+                                    <LayoutDashboard className="h-4 w-4 text-muted-foreground" />
+                                    {profile.role === 'admin'
+                                      ? t('nav.admin_panel')
+                                      : t('nav.provider_dashboard')}
+                                  </Link>
+                                )}
+                                <Link
+                                  href={`/${locale}/my-bookings`}
+                                  onClick={() => setUserMenuOpen(false)}
+                                  className="flex items-center gap-3 px-4 py-2.5 text-sm font-medium hover:bg-muted rounded-xl transition-colors"
+                                >
+                                  <User className="h-4 w-4 text-muted-foreground" />
+                                  {t('nav.my_bookings')}
+                                </Link>
+                              </div>
+                              <div className="h-px bg-border/50 my-2" />
+                              <button
+                                onClick={handleSignOut}
+                                className="flex items-center gap-3 w-full px-4 py-2.5 text-sm font-medium text-destructive hover:bg-destructive/10 rounded-xl transition-colors"
+                              >
+                                <LogOut className="h-4 w-4" />
+                                {t('common.logout')}
+                              </button>
+                            </motion.div>
+                          </>
+                        )}
+                      </AnimatePresence>
                     </div>
-                  </div>
+                  </>
                 ) : (
                   <div className="flex items-center gap-2">
                     <Link
                       href={`/${locale}/auth/login`}
-                      className="text-sm font-medium px-4 py-2 rounded-lg hover:bg-muted transition-colors"
+                      className="hidden sm:inline-flex text-sm font-bold px-5 py-2.5 rounded-xl text-slate-700 hover:bg-slate-100 transition-colors"
                     >
                       {t('common.login')}
                     </Link>
                     <Link
                       href={`/${locale}/auth/signup`}
-                      className="text-sm font-medium px-4 py-2 rounded-lg bg-accent text-accent-foreground hover:bg-accent/90 transition-colors"
+                      className="text-sm font-bold px-5 py-2.5 rounded-xl bg-primary text-white hover:bg-primary/90 transition-all shadow-md shadow-primary/20 hover:shadow-lg hover:-translate-y-0.5"
                     >
                       {t('common.signup')}
                     </Link>
                   </div>
                 )}
-              </>
+              </div>
             )}
 
             {/* Mobile hamburger */}
             <button
-              className="md:hidden p-2"
+              className="md:hidden p-2 rounded-xl hover:bg-muted transition-colors"
               onClick={() => setMobileOpen(!mobileOpen)}
             >
               {mobileOpen ? <X className="h-5 w-5" /> : <Menu className="h-5 w-5" />}
@@ -151,25 +211,43 @@ export function Navbar() {
         </div>
 
         {/* Mobile menu */}
-        {mobileOpen && (
-          <div className="md:hidden pb-4 border-t pt-4 space-y-2">
-            <Link
-              href={`/${locale}/trips`}
-              onClick={() => setMobileOpen(false)}
-              className="block px-3 py-2 text-sm font-medium text-muted-foreground hover:text-foreground rounded-lg hover:bg-muted"
+        <AnimatePresence>
+          {mobileOpen && (
+            <motion.div
+              initial={{ opacity: 0, height: 0 }}
+              animate={{ opacity: 1, height: 'auto' }}
+              exit={{ opacity: 0, height: 0 }}
+              className="md:hidden border-t border-border/50 bg-background/95 backdrop-blur-xl overflow-hidden rounded-b-[2rem]"
             >
-              {t('nav.browse_trips')}
-            </Link>
-            <Link
-              href={`/${locale}/become-provider`}
-              onClick={() => setMobileOpen(false)}
-              className="block px-3 py-2 text-sm font-medium text-muted-foreground hover:text-foreground rounded-lg hover:bg-muted"
-            >
-              {t('nav.become_provider')}
-            </Link>
-          </div>
-        )}
-      </div>
-    </nav>
+              <div className="p-4 space-y-1">
+                <Link
+                  href={`/${locale}/trips`}
+                  onClick={() => setMobileOpen(false)}
+                  className="flex items-center gap-3 px-4 py-3 text-sm font-medium text-foreground hover:bg-muted rounded-xl transition-colors"
+                >
+                  <Plane className="h-4 w-4 text-muted-foreground" />
+                  {t('nav.browse_trips')}
+                </Link>
+                <Link
+                  href={`/${locale}/become-provider`}
+                  onClick={() => setMobileOpen(false)}
+                  className="flex items-center gap-3 px-4 py-3 text-sm font-medium text-foreground hover:bg-muted rounded-xl transition-colors"
+                >
+                  <Building2 className="h-4 w-4 text-muted-foreground" />
+                  {t('nav.become_provider')}
+                </Link>
+                
+                <div className="h-px bg-border/50 my-2" />
+                
+                <div className="flex items-center justify-between px-4 py-2">
+                  <span className="text-sm font-medium text-muted-foreground">{locale === 'ar' ? 'اللغة' : 'Language'}</span>
+                  <LanguageSwitcher />
+                </div>
+              </div>
+            </motion.div>
+          )}
+        </AnimatePresence>
+      </nav>
+    </div>
   )
 }

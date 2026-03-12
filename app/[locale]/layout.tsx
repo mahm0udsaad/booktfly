@@ -9,11 +9,26 @@ import { Toaster } from '@/components/ui/toaster'
 import '@/app/globals.css'
 
 export const metadata: Metadata = {
+  metadataBase: new URL(process.env.NEXT_PUBLIC_APP_URL || 'https://bookitfly.com'),
   title: {
     default: 'BooktFly - بوكت فلاي',
     template: '%s | BooktFly',
   },
   description: 'منصة حجز رحلات الطيران بأسعار مخفضة - Discounted Flight Booking Platform',
+  openGraph: {
+    type: 'website',
+    siteName: 'BooktFly',
+    locale: 'ar_SA',
+    alternateLocale: 'en_US',
+    images: [{ url: '/logo.png', width: 512, height: 512, alt: 'BooktFly' }],
+  },
+  twitter: {
+    card: 'summary_large_image',
+  },
+  robots: {
+    index: true,
+    follow: true,
+  },
 }
 
 type Props = {

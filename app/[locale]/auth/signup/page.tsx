@@ -9,20 +9,20 @@ import Link from 'next/link'
 import { z } from 'zod'
 import { Mail, Lock, User, Phone, Loader2, Plane, CheckCircle2 } from 'lucide-react'
 import { createClient } from '@/lib/supabase/client'
-import { signupSchema } from '@/lib/validations'
+import { getSignupSchema } from '@/lib/validations'
 import { toast } from '@/components/ui/toaster'
 
-type SignupFormData = z.infer<typeof signupSchema>
+type SignupFormData = z.infer<ReturnType<typeof getSignupSchema>>
 
 export default function SignupPage() {
   const t = useTranslations('auth')
   const tCommon = useTranslations('common')
-  const locale = useLocale()
+  const locale = useLocale() as 'ar' | 'en'
   const [isLoading, setIsLoading] = useState(false)
   const [isVerificationSent, setIsVerificationSent] = useState(false)
 
   const form = useForm<SignupFormData>({
-    resolver: zodResolver(signupSchema),
+    resolver: zodResolver(getSignupSchema(locale)),
     defaultValues: {
       full_name: '',
       email: '',
@@ -43,6 +43,7 @@ export default function SignupPage() {
           data: {
             full_name: data.full_name,
             phone: data.phone || null,
+            locale,
           },
         },
       })

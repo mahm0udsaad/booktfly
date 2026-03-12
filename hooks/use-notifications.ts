@@ -1,18 +1,23 @@
 'use client'
 
-import { useEffect, useState } from 'react'
+import { useEffect, useState, useRef } from 'react'
+import { useLocale } from 'next-intl'
 import { createClient } from '@/lib/supabase/client'
+import { playNotificationSound } from '@/lib/notification-sound'
+import { toast } from '@/components/ui/toaster'
 import type { Notification } from '@/types'
 
 export function useNotifications(userId: string | undefined) {
   const [notifications, setNotifications] = useState<Notification[]>([])
   const [unreadCount, setUnreadCount] = useState(0)
+  const locale = useLocale()
+  const initialLoadDone = useRef(false)
   const supabase = createClient()
 
   useEffect(() => {
     if (!userId) return
+    initialLoadDone.current = false
 
-    // Fetch initial notifications
     async function fetchNotifications() {
       const { data } = await supabase
         .from('notifications')
@@ -25,11 +30,11 @@ export function useNotifications(userId: string | undefined) {
         setNotifications(data)
         setUnreadCount(data.filter((n) => !n.read).length)
       }
+      initialLoadDone.current = true
     }
 
     fetchNotifications()
 
-    // Subscribe to realtime
     const channel = supabase
       .channel('notifications')
       .on(
@@ -44,6 +49,13 @@ export function useNotifications(userId: string | undefined) {
           const newNotification = payload.new as Notification
           setNotifications((prev) => [newNotification, ...prev])
           setUnreadCount((prev) => prev + 1)
+
+          if (initialLoadDone.current) {
+            playNotificationSound()
+            const title = locale === 'ar' ? newNotification.title_ar : newNotification.title_en
+            const description = locale === 'ar' ? newNotification.body_ar : newNotification.body_en
+            toast({ title, description })
+          }
         }
       )
       .subscribe()
@@ -51,7 +63,7 @@ export function useNotifications(userId: string | undefined) {
     return () => {
       supabase.removeChannel(channel)
     }
-  }, [userId])
+  }, [userId, locale])
 
   const markAsRead = async (notificationId: string) => {
     await supabase

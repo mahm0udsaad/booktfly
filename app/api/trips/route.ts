@@ -2,9 +2,14 @@ import { NextRequest, NextResponse } from 'next/server'
 import { createClient } from '@/lib/supabase/server'
 import { supabaseAdmin } from '@/lib/supabase/admin'
 import { tripSchema } from '@/lib/validations'
+import { rateLimit } from '@/lib/rate-limit'
+import { optimizeImage } from '@/lib/optimize-image'
 
 export async function GET(request: NextRequest) {
   try {
+    const limited = rateLimit(request, { limit: 30, windowMs: 60_000 })
+    if (limited) return limited
+
     const supabase = await createClient()
     const { searchParams } = new URL(request.url)
 
@@ -111,6 +116,9 @@ export async function GET(request: NextRequest) {
 // POST: Create a new trip (provider only)
 export async function POST(request: NextRequest) {
   try {
+    const limited = rateLimit(request, { limit: 10, windowMs: 60_000 })
+    if (limited) return limited
+
     const supabase = await createClient()
     const {
       data: { user },
@@ -186,14 +194,14 @@ export async function POST(request: NextRequest) {
     let imageUrl: string | null = null
     const imageFile = formData.get('image') as File | null
     if (imageFile && imageFile.size > 0) {
-      const ext = imageFile.name.split('.').pop() || 'jpg'
-      const filePath = `trips/${provider.id}/${Date.now()}.${ext}`
-      const buffer = Buffer.from(await imageFile.arrayBuffer())
+      const filePath = `trips/${provider.id}/${Date.now()}.webp`
+      const rawBuffer = Buffer.from(await imageFile.arrayBuffer())
+      const { buffer, contentType } = await optimizeImage(rawBuffer)
 
       const { error: uploadError } = await supabaseAdmin.storage
         .from('trip-images')
         .upload(filePath, buffer, {
-          contentType: imageFile.type,
+          contentType,
           upsert: true,
         })
 

@@ -9,30 +9,21 @@ import { useRouter } from 'next/navigation'
 import { z } from 'zod'
 import { Lock, Loader2, ShieldCheck, CheckCircle2 } from 'lucide-react'
 import { createClient } from '@/lib/supabase/client'
+import { getUpdatePasswordSchema } from '@/lib/validations'
 import { toast } from '@/components/ui/toaster'
 
-const updatePasswordSchema = z
-  .object({
-    password: z.string().min(6, 'كلمة المرور يجب أن تكون 6 أحرف على الأقل'),
-    confirmPassword: z.string(),
-  })
-  .refine((data) => data.password === data.confirmPassword, {
-    message: 'كلمات المرور غير متطابقة',
-    path: ['confirmPassword'],
-  })
-
-type UpdatePasswordFormData = z.infer<typeof updatePasswordSchema>
+type UpdatePasswordFormData = z.infer<ReturnType<typeof getUpdatePasswordSchema>>
 
 export default function UpdatePasswordPage() {
   const t = useTranslations('auth')
   const tCommon = useTranslations('common')
-  const locale = useLocale()
+  const locale = useLocale() as 'ar' | 'en'
   const router = useRouter()
   const [isLoading, setIsLoading] = useState(false)
   const [isSuccess, setIsSuccess] = useState(false)
 
   const form = useForm<UpdatePasswordFormData>({
-    resolver: zodResolver(updatePasswordSchema),
+    resolver: zodResolver(getUpdatePasswordSchema(locale)),
     defaultValues: {
       password: '',
       confirmPassword: '',

@@ -1,6 +1,6 @@
 'use client'
 
-import { useEffect, useState, useCallback } from 'react'
+import { useEffect, useState, useCallback, Suspense } from 'react'
 import { useLocale, useTranslations } from 'next-intl'
 import {
   Search,
@@ -9,13 +9,16 @@ import {
   Plane,
   ChevronDown,
   Loader2,
+  MapPin
 } from 'lucide-react'
 import { cn } from '@/lib/utils'
 import { useDebounce } from '@/hooks/use-debounce'
 import { TripCard } from '@/components/trips/trip-card'
 import { EmptyState } from '@/components/shared/empty-state'
 import { CardSkeleton } from '@/components/shared/loading-skeleton'
+import { CityAutocomplete } from '@/components/shared/city-autocomplete'
 import type { Trip } from '@/types'
+import { useSearchParams } from 'next/navigation'
 
 type Filters = {
   origin: string
@@ -41,17 +44,25 @@ const initialFilters: Filters = {
   sort: 'newest',
 }
 
-export default function TripsPage() {
+function TripsContent() {
   const t = useTranslations()
   const locale = useLocale()
   const isAr = locale === 'ar'
+  const searchParams = useSearchParams()
 
   const [trips, setTrips] = useState<Trip[]>([])
   const [loading, setLoading] = useState(true)
   const [loadingMore, setLoadingMore] = useState(false)
   const [page, setPage] = useState(1)
   const [totalPages, setTotalPages] = useState(1)
-  const [filters, setFilters] = useState<Filters>(initialFilters)
+  
+  // Initialize filters from URL params if available
+  const [filters, setFilters] = useState<Filters>(() => ({
+    ...initialFilters,
+    origin: searchParams.get('origin') || '',
+    destination: searchParams.get('destination') || '',
+  }))
+  
   const [showFilters, setShowFilters] = useState(false)
 
   const debouncedOrigin = useDebounce(filters.origin, 400)
@@ -119,103 +130,118 @@ export default function TripsPage() {
   )
 
   return (
-    <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+    <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 pt-24 pb-8 md:pt-32 md:pb-16 lg:pt-36 lg:pb-20 animate-fade-in-up">
       {/* Header */}
-      <div className="mb-8">
-        <h1 className="text-3xl font-bold text-foreground">
+      <div className="text-center max-w-3xl mx-auto mb-8 md:mb-12">
+        <h1 className="text-3xl md:text-4xl lg:text-5xl font-black text-slate-900 tracking-tight mb-3 md:mb-4">
           {t('trips.browse_title')}
         </h1>
-        <p className="text-muted-foreground mt-1">
+        <p className="text-base md:text-lg text-slate-500 font-medium px-4">
           {t('trips.search_placeholder')}
         </p>
       </div>
 
-      {/* Search + Filter Toggle */}
-      <div className="flex flex-col sm:flex-row gap-3 mb-6">
-        {/* Origin search */}
-        <div className="relative flex-1">
-          <Search className="absolute start-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-          <input
-            type="text"
-            placeholder={t('trips.filter_origin')}
-            value={filters.origin}
-            onChange={(e) => updateFilter('origin', e.target.value)}
-            className="w-full ps-10 pe-4 py-2.5 rounded-lg border bg-background text-sm focus:outline-none focus:ring-2 focus:ring-ring"
-          />
-        </div>
-        {/* Destination search */}
-        <div className="relative flex-1">
-          <Search className="absolute start-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-          <input
-            type="text"
-            placeholder={t('trips.filter_destination')}
-            value={filters.destination}
-            onChange={(e) => updateFilter('destination', e.target.value)}
-            className="w-full ps-10 pe-4 py-2.5 rounded-lg border bg-background text-sm focus:outline-none focus:ring-2 focus:ring-ring"
-          />
+      {/* Floating Search & Filter Bar */}
+      <div className="bg-white rounded-3xl md:rounded-[2rem] p-2 md:p-3 shadow-xl shadow-slate-200/50 border border-slate-100 flex flex-col lg:flex-row gap-2 md:gap-3 mb-8 relative z-20">
+        
+        {/* Search Inputs Group */}
+        <div className="flex flex-col sm:flex-row flex-1 gap-2 sm:gap-0">
+            {/* Origin search */}
+            <CityAutocomplete
+              value={filters.origin}
+              onChange={(val) => updateFilter('origin', val)}
+              placeholder={t('trips.filter_origin')}
+              className="rounded-2xl sm:rounded-none sm:rounded-s-2xl"
+            />
+
+            <div className="hidden sm:block w-px h-8 bg-slate-200 self-center mx-2" />
+
+            {/* Destination search */}
+            <CityAutocomplete
+              value={filters.destination}
+              onChange={(val) => updateFilter('destination', val)}
+              placeholder={t('trips.filter_destination')}
+              className="rounded-2xl sm:rounded-none sm:rounded-e-2xl"
+            />
         </div>
 
-        {/* Sort */}
-        <div className="relative">
-          <select
-            value={filters.sort}
-            onChange={(e) => updateFilter('sort', e.target.value)}
-            className="appearance-none w-full sm:w-48 px-4 py-2.5 rounded-lg border bg-background text-sm pe-10 focus:outline-none focus:ring-2 focus:ring-ring"
-          >
-            <option value="newest">{t('trips.sort_newest')}</option>
-            <option value="price_asc">{t('trips.sort_price_asc')}</option>
-            <option value="price_desc">{t('trips.sort_price_desc')}</option>
-            <option value="date">{t('trips.sort_date')}</option>
-          </select>
-          <ChevronDown className="absolute end-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground pointer-events-none" />
-        </div>
+        {/* Action Buttons */}
+        <div className="flex items-center gap-2 md:gap-3 sm:w-auto">
+            {/* Sort */}
+            <div className="relative flex-1 sm:flex-none">
+            <select
+                value={filters.sort}
+                onChange={(e) => updateFilter('sort', e.target.value)}
+                className="appearance-none w-full sm:w-40 md:w-48 h-12 md:h-14 px-4 md:px-6 rounded-2xl bg-slate-50 border-none text-slate-700 font-semibold text-xs md:text-sm pe-10 md:pe-12 focus:ring-2 focus:ring-primary focus:outline-none hover:bg-slate-100 transition-colors cursor-pointer"
+            >
+                <option value="newest">{t('trips.sort_newest')}</option>
+                <option value="price_asc">{t('trips.sort_price_asc')}</option>
+                <option value="price_desc">{t('trips.sort_price_desc')}</option>
+                <option value="date">{t('trips.sort_date')}</option>
+            </select>
+            <ChevronDown className="absolute end-3 md:end-4 top-1/2 -translate-y-1/2 h-4 w-4 md:h-5 md:w-5 text-slate-400 pointer-events-none" />
+            </div>
 
-        {/* Filter toggle button */}
-        <button
-          onClick={() => setShowFilters(!showFilters)}
-          className={cn(
-            'flex items-center gap-2 px-4 py-2.5 rounded-lg border text-sm font-medium transition-colors',
-            showFilters
-              ? 'bg-accent text-accent-foreground border-accent'
-              : 'bg-background hover:bg-muted'
-          )}
-        >
-          <SlidersHorizontal className="h-4 w-4" />
-          {t('common.filter')}
-        </button>
+            {/* Filter toggle button */}
+            <button
+                onClick={() => setShowFilters(!showFilters)}
+                className={cn(
+                    'flex items-center justify-center gap-2 h-12 md:h-14 px-4 md:px-6 rounded-2xl font-bold transition-all shadow-sm shrink-0',
+                    showFilters
+                    ? 'bg-accent text-white shadow-accent/20 hover:bg-accent/90'
+                    : 'bg-slate-50 text-slate-700 hover:bg-slate-100'
+                )}
+            >
+                <SlidersHorizontal className="h-4 w-4 md:h-5 md:w-5" />
+                <span className="hidden sm:inline text-xs md:text-sm">{t('common.filter')}</span>
+            </button>
+        </div>
       </div>
 
       {/* Filter panel */}
       {showFilters && (
-        <div className="rounded-xl border bg-card p-5 mb-6 space-y-4">
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+        <div className="rounded-[1.5rem] md:rounded-[2rem] border border-slate-100 bg-white p-5 md:p-8 mb-8 md:mb-12 shadow-xl shadow-slate-200/40 animate-fade-in-up" style={{ animationDelay: '100ms' }}>
+          <div className="flex items-center justify-between mb-5 md:mb-6">
+             <h3 className="text-base md:text-lg font-bold text-slate-900">{t('common.filter')}</h3>
+             {hasActiveFilters && (
+              <button
+                onClick={clearFilters}
+                className="flex items-center gap-1.5 text-xs md:text-sm font-semibold text-destructive bg-destructive/10 px-3 py-1.5 rounded-full hover:bg-destructive/20 transition-colors"
+              >
+                <X className="h-3.5 w-3.5 md:h-4 md:w-4" />
+                {t('common.cancel')}
+              </button>
+            )}
+          </div>
+          
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 md:gap-6">
             {/* Date range */}
-            <div>
-              <label className="block text-xs font-medium text-muted-foreground mb-1.5">
+            <div className="space-y-1.5 md:space-y-2">
+              <label className="block text-[10px] md:text-xs font-bold text-slate-500 uppercase tracking-widest">
                 {t('trips.filter_date')} ({t('common.from')})
               </label>
               <input
                 type="date"
                 value={filters.date_from}
                 onChange={(e) => updateFilter('date_from', e.target.value)}
-                className="w-full px-3 py-2 rounded-lg border bg-background text-sm focus:outline-none focus:ring-2 focus:ring-ring"
+                className="w-full px-3 md:px-4 py-2.5 md:py-3 rounded-xl bg-slate-50 border-none text-slate-700 text-sm md:text-base font-medium focus:ring-2 focus:ring-primary focus:outline-none transition-colors hover:bg-slate-100"
               />
             </div>
-            <div>
-              <label className="block text-xs font-medium text-muted-foreground mb-1.5">
+            <div className="space-y-1.5 md:space-y-2">
+              <label className="block text-[10px] md:text-xs font-bold text-slate-500 uppercase tracking-widest">
                 {t('trips.filter_date')} ({t('common.to')})
               </label>
               <input
                 type="date"
                 value={filters.date_to}
                 onChange={(e) => updateFilter('date_to', e.target.value)}
-                className="w-full px-3 py-2 rounded-lg border bg-background text-sm focus:outline-none focus:ring-2 focus:ring-ring"
+                className="w-full px-3 md:px-4 py-2.5 md:py-3 rounded-xl bg-slate-50 border-none text-slate-700 text-sm md:text-base font-medium focus:ring-2 focus:ring-primary focus:outline-none transition-colors hover:bg-slate-100"
               />
             </div>
 
             {/* Price range */}
-            <div>
-              <label className="block text-xs font-medium text-muted-foreground mb-1.5">
+            <div className="space-y-1.5 md:space-y-2">
+              <label className="block text-[10px] md:text-xs font-bold text-slate-500 uppercase tracking-widest">
                 {t('trips.filter_price')} ({t('common.from')})
               </label>
               <input
@@ -224,11 +250,11 @@ export default function TripsPage() {
                 value={filters.price_min}
                 onChange={(e) => updateFilter('price_min', e.target.value)}
                 placeholder="0"
-                className="w-full px-3 py-2 rounded-lg border bg-background text-sm focus:outline-none focus:ring-2 focus:ring-ring"
+                className="w-full px-3 md:px-4 py-2.5 md:py-3 rounded-xl bg-slate-50 border-none text-slate-700 text-sm md:text-base font-medium focus:ring-2 focus:ring-primary focus:outline-none transition-colors hover:bg-slate-100"
               />
             </div>
-            <div>
-              <label className="block text-xs font-medium text-muted-foreground mb-1.5">
+            <div className="space-y-1.5 md:space-y-2">
+              <label className="block text-[10px] md:text-xs font-bold text-slate-500 uppercase tracking-widest">
                 {t('trips.filter_price')} ({t('common.to')})
               </label>
               <input
@@ -237,89 +263,87 @@ export default function TripsPage() {
                 value={filters.price_max}
                 onChange={(e) => updateFilter('price_max', e.target.value)}
                 placeholder="10000"
-                className="w-full px-3 py-2 rounded-lg border bg-background text-sm focus:outline-none focus:ring-2 focus:ring-ring"
+                className="w-full px-3 md:px-4 py-2.5 md:py-3 rounded-xl bg-slate-50 border-none text-slate-700 text-sm md:text-base font-medium focus:ring-2 focus:ring-primary focus:outline-none transition-colors hover:bg-slate-100"
               />
             </div>
 
             {/* Trip type */}
-            <div>
-              <label className="block text-xs font-medium text-muted-foreground mb-1.5">
+            <div className="space-y-1.5 md:space-y-2">
+              <label className="block text-[10px] md:text-xs font-bold text-slate-500 uppercase tracking-widest">
                 {t('trips.filter_type')}
               </label>
-              <select
-                value={filters.trip_type}
-                onChange={(e) => updateFilter('trip_type', e.target.value)}
-                className="w-full px-3 py-2 rounded-lg border bg-background text-sm focus:outline-none focus:ring-2 focus:ring-ring"
-              >
-                <option value="">{t('common.view_all')}</option>
-                <option value="one_way">{t('trips.one_way')}</option>
-                <option value="round_trip">{t('trips.round_trip')}</option>
-              </select>
+              <div className="relative">
+                <select
+                    value={filters.trip_type}
+                    onChange={(e) => updateFilter('trip_type', e.target.value)}
+                    className="appearance-none w-full px-3 md:px-4 py-2.5 md:py-3 rounded-xl bg-slate-50 border-none text-slate-700 text-sm md:text-base font-medium focus:ring-2 focus:ring-primary focus:outline-none transition-colors hover:bg-slate-100 pr-10 cursor-pointer"
+                >
+                    <option value="">{t('common.view_all')}</option>
+                    <option value="one_way">{t('trips.one_way')}</option>
+                    <option value="round_trip">{t('trips.round_trip')}</option>
+                </select>
+                <ChevronDown className="absolute end-4 top-1/2 -translate-y-1/2 h-4 w-4 text-slate-400 pointer-events-none" />
+              </div>
             </div>
 
             {/* Cabin class */}
-            <div>
-              <label className="block text-xs font-medium text-muted-foreground mb-1.5">
+            <div className="space-y-1.5 md:space-y-2">
+              <label className="block text-[10px] md:text-xs font-bold text-slate-500 uppercase tracking-widest">
                 {t('trips.filter_cabin')}
               </label>
-              <select
-                value={filters.cabin_class}
-                onChange={(e) => updateFilter('cabin_class', e.target.value)}
-                className="w-full px-3 py-2 rounded-lg border bg-background text-sm focus:outline-none focus:ring-2 focus:ring-ring"
-              >
-                <option value="">{t('common.view_all')}</option>
-                <option value="economy">{t('trips.economy')}</option>
-                <option value="business">{t('trips.business')}</option>
-                <option value="first">{t('trips.first')}</option>
-              </select>
+              <div className="relative">
+                <select
+                    value={filters.cabin_class}
+                    onChange={(e) => updateFilter('cabin_class', e.target.value)}
+                    className="appearance-none w-full px-3 md:px-4 py-2.5 md:py-3 rounded-xl bg-slate-50 border-none text-slate-700 text-sm md:text-base font-medium focus:ring-2 focus:ring-primary focus:outline-none transition-colors hover:bg-slate-100 pr-10 cursor-pointer"
+                >
+                    <option value="">{t('common.view_all')}</option>
+                    <option value="economy">{t('trips.economy')}</option>
+                    <option value="business">{t('trips.business')}</option>
+                    <option value="first">{t('trips.first')}</option>
+                </select>
+                 <ChevronDown className="absolute end-4 top-1/2 -translate-y-1/2 h-4 w-4 text-slate-400 pointer-events-none" />
+              </div>
             </div>
           </div>
-
-          {hasActiveFilters && (
-            <div className="flex justify-end">
-              <button
-                onClick={clearFilters}
-                className="flex items-center gap-1.5 text-sm text-destructive hover:text-destructive/80 transition-colors"
-              >
-                <X className="h-3.5 w-3.5" />
-                {t('common.cancel')}
-              </button>
-            </div>
-          )}
         </div>
       )}
 
       {/* Results */}
       {loading ? (
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 md:gap-8">
           {Array.from({ length: 6 }).map((_, i) => (
             <CardSkeleton key={i} />
           ))}
         </div>
       ) : trips.length === 0 ? (
-        <EmptyState
-          icon={Plane}
-          message={t('trips.no_trips')}
-          actionLabel={hasActiveFilters ? t('common.cancel') : undefined}
-          onAction={hasActiveFilters ? clearFilters : undefined}
-        />
+        <div className="animate-fade-in-up" style={{ animationDelay: '200ms' }}>
+          <EmptyState
+            icon={Plane}
+            message={t('trips.no_trips')}
+            actionLabel={hasActiveFilters ? t('common.cancel') : undefined}
+            onAction={hasActiveFilters ? clearFilters : undefined}
+          />
+        </div>
       ) : (
         <>
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-            {trips.map((trip) => (
-              <TripCard key={trip.id} trip={trip} />
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6 md:gap-8">
+            {trips.map((trip, idx) => (
+              <div key={trip.id} className="animate-fade-in-up" style={{ animationDelay: `${(idx % 6) * 100}ms` }}>
+                <TripCard trip={trip} />
+              </div>
             ))}
           </div>
 
           {/* Load more */}
           {page < totalPages && (
-            <div className="flex justify-center mt-10">
+            <div className="flex justify-center mt-12 md:mt-16">
               <button
                 onClick={handleLoadMore}
                 disabled={loadingMore}
-                className="inline-flex items-center gap-2 px-8 py-3 rounded-lg border bg-background text-sm font-medium hover:bg-muted transition-colors disabled:opacity-50"
+                className="group inline-flex items-center gap-2 md:gap-3 px-6 md:px-8 py-3 md:py-4 rounded-2xl bg-white border border-slate-200 text-slate-900 text-sm md:text-base font-bold hover:bg-slate-50 transition-all shadow-sm disabled:opacity-50 hover:shadow-md hover:-translate-y-0.5"
               >
-                {loadingMore && <Loader2 className="h-4 w-4 animate-spin" />}
+                {loadingMore && <Loader2 className="h-4 w-4 md:h-5 md:w-5 animate-spin text-primary" />}
                 {loadingMore ? t('common.loading') : t('common.view_all')}
               </button>
             </div>
@@ -327,5 +351,21 @@ export default function TripsPage() {
         </>
       )}
     </div>
+  )
+}
+
+export default function TripsPage() {
+  return (
+    <Suspense fallback={
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8 mt-32">
+                {Array.from({ length: 6 }).map((_, i) => (
+                <CardSkeleton key={i} />
+                ))}
+            </div>
+        </div>
+    }>
+      <TripsContent />
+    </Suspense>
   )
 }

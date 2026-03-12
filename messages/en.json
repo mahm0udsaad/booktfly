@@ -14,6 +14,7 @@
     "delete": "Delete",
     "edit": "Edit",
     "back": "Back",
+    "retry": "Try Again",
     "next": "Next",
     "search": "Search",
     "filter": "Filter",
@@ -125,7 +126,8 @@
     "price_per_seat": "Price Per Seat",
     "total_seats": "Total Seats",
     "posted_by": "Posted by",
-    "no_trips": "No trips available at the moment. Please check back later."
+    "no_trips": "No trips available at the moment. Please check back later.",
+    "availability": "Availability"
   },
   "booking": {
     "title": "Book Your Trip",
@@ -179,7 +181,8 @@
     "net_payout": "Net Payout",
     "platform_commission": "Platform Commission",
     "no_trips_yet": "You haven't posted any trips yet.",
-    "post_first_trip": "Post Your First Trip"
+    "post_first_trip": "Post Your First Trip",
+    "loading_dashboard": "Loading Dashboard..."
   },
   "become_provider": {
     "title": "Become a Provider",
@@ -313,6 +316,26 @@
     "stats_trips": "Trips Available",
     "stats_providers": "Trusted Providers",
     "stats_travelers": "Happy Travelers"
+  },
+  "validation": {
+    "name_required": "Name is required",
+    "email_invalid": "Invalid email address",
+    "password_min": "Password must be at least 6 characters",
+    "password_required": "Password is required",
+    "company_name_ar_required": "Company name in Arabic is required",
+    "phone_required": "Phone number is required",
+    "terms_required": "You must agree to the terms and conditions",
+    "airline_required": "Airline name is required",
+    "origin_required": "Origin city is required",
+    "destination_required": "Destination city is required",
+    "departure_required": "Departure date is required",
+    "seats_required": "Number of seats is required",
+    "price_required": "Price is required",
+    "passenger_name_required": "Passenger name is required",
+    "passenger_phone_required": "Phone number is required",
+    "passenger_email_invalid": "Invalid email address",
+    "passwords_mismatch": "Passwords do not match",
+    "new_password_min": "New password must be at least 6 characters"
   },
   "footer": {
     "about": "About BookitFly",

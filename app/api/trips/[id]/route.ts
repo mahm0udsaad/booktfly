@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { createClient } from '@/lib/supabase/server'
 import { supabaseAdmin } from '@/lib/supabase/admin'
+import { optimizeImage } from '@/lib/optimize-image'
 
 type RouteParams = {
   params: Promise<{ id: string }>
@@ -107,14 +108,14 @@ export async function PATCH(request: NextRequest, { params }: RouteParams) {
     // Upload image if provided
     const imageFile = formData.get('image') as File | null
     if (imageFile && imageFile.size > 0) {
-      const ext = imageFile.name.split('.').pop() || 'jpg'
-      const filePath = `trips/${provider.id}/${Date.now()}.${ext}`
-      const buffer = Buffer.from(await imageFile.arrayBuffer())
+      const filePath = `trips/${provider.id}/${Date.now()}.webp`
+      const rawBuffer = Buffer.from(await imageFile.arrayBuffer())
+      const { buffer, contentType } = await optimizeImage(rawBuffer)
 
       const { error: uploadError } = await supabaseAdmin.storage
         .from('trip-images')
         .upload(filePath, buffer, {
-          contentType: imageFile.type,
+          contentType,
           upsert: true,
         })
 

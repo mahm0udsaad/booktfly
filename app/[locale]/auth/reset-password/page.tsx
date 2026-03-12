@@ -9,20 +9,20 @@ import Link from 'next/link'
 import { z } from 'zod'
 import { Mail, Loader2, KeyRound, CheckCircle2, ArrowLeft, ArrowRight } from 'lucide-react'
 import { createClient } from '@/lib/supabase/client'
-import { magicLinkSchema } from '@/lib/validations'
+import { getMagicLinkSchema } from '@/lib/validations'
 import { toast } from '@/components/ui/toaster'
 
-type ResetFormData = z.infer<typeof magicLinkSchema>
+type ResetFormData = z.infer<ReturnType<typeof getMagicLinkSchema>>
 
 export default function ResetPasswordPage() {
   const t = useTranslations('auth')
   const tCommon = useTranslations('common')
-  const locale = useLocale()
+  const locale = useLocale() as 'ar' | 'en'
   const [isLoading, setIsLoading] = useState(false)
   const [isSent, setIsSent] = useState(false)
 
   const form = useForm<ResetFormData>({
-    resolver: zodResolver(magicLinkSchema),
+    resolver: zodResolver(getMagicLinkSchema(locale)),
     defaultValues: { email: '' },
   })
 

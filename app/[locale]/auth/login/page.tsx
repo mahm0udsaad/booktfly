@@ -1,36 +1,46 @@
 'use client'
 
-import { useState } from 'react'
+import { Suspense, useState } from 'react'
 import { useForm } from 'react-hook-form'
 import { zodResolver } from '@hookform/resolvers/zod'
 import { useTranslations } from 'next-intl'
 import { useLocale } from 'next-intl'
-import { useRouter } from 'next/navigation'
+import { useRouter, useSearchParams } from 'next/navigation'
 import Link from 'next/link'
 import { z } from 'zod'
 import { Mail, Lock, Loader2, Plane, Sparkles } from 'lucide-react'
 import { createClient } from '@/lib/supabase/client'
-import { loginSchema, magicLinkSchema } from '@/lib/validations'
+import { getLoginSchema, getMagicLinkSchema } from '@/lib/validations'
 import { toast } from '@/components/ui/toaster'
 
-type LoginFormData = z.infer<typeof loginSchema>
-type MagicLinkFormData = z.infer<typeof magicLinkSchema>
+type LoginFormData = z.infer<ReturnType<typeof getLoginSchema>>
+type MagicLinkFormData = z.infer<ReturnType<typeof getMagicLinkSchema>>
 
 export default function LoginPage() {
+  return (
+    <Suspense>
+      <LoginContent />
+    </Suspense>
+  )
+}
+
+function LoginContent() {
   const t = useTranslations('auth')
   const tCommon = useTranslations('common')
-  const locale = useLocale()
+  const locale = useLocale() as 'ar' | 'en'
   const router = useRouter()
+  const searchParams = useSearchParams()
+  const redirectTo = searchParams.get('redirect')
   const [isMagicLink, setIsMagicLink] = useState(false)
   const [isLoading, setIsLoading] = useState(false)
 
   const loginForm = useForm<LoginFormData>({
-    resolver: zodResolver(loginSchema),
+    resolver: zodResolver(getLoginSchema(locale)),
     defaultValues: { email: '', password: '' },
   })
 
   const magicLinkForm = useForm<MagicLinkFormData>({
-    resolver: zodResolver(magicLinkSchema),
+    resolver: zodResolver(getMagicLinkSchema(locale)),
     defaultValues: { email: '' },
   })
 
@@ -57,13 +67,17 @@ export default function LoginPage() {
         .eq('id', userData.user.id)
         .single()
 
-      const role = profile?.role || 'buyer'
-      if (role === 'admin') {
-        router.push(`/${locale}/admin`)
-      } else if (role === 'provider') {
-        router.push(`/${locale}/provider/dashboard`)
+      if (redirectTo) {
+        router.push(redirectTo)
       } else {
-        router.push(`/${locale}`)
+        const role = profile?.role || 'buyer'
+        if (role === 'admin') {
+          router.push(`/${locale}/admin`)
+        } else if (role === 'provider') {
+          router.push(`/${locale}/provider/dashboard`)
+        } else {
+          router.push(`/${locale}`)
+        }
       }
     } catch {
       toast({ title: tCommon('error'), variant: 'destructive' })
