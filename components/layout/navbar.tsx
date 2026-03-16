@@ -4,7 +4,7 @@ import Link from 'next/link'
 import { useLocale, useTranslations } from 'next-intl'
 import { useState, useEffect } from 'react'
 import Image from 'next/image'
-import { Menu, X, ChevronDown, LogOut, User, LayoutDashboard, Building2, Plane, Ticket } from 'lucide-react'
+import { Menu, X, ChevronDown, LogOut, User, LayoutDashboard, Plane, Ticket } from 'lucide-react'
 import { motion, AnimatePresence } from 'framer-motion'
 import { useUser } from '@/hooks/use-user'
 import { LanguageSwitcher } from './language-switcher'
@@ -82,17 +82,6 @@ export function Navbar() {
             >
               {t('nav.browse_trips')}
             </Link>
-            <Link
-              href={`/${locale}/become-provider`}
-              className={cn(
-                "px-6 py-2.5 text-sm font-bold transition-all rounded-xl",
-                scrolled 
-                  ? "text-primary hover:bg-primary/5" 
-                  : "text-primary hover:bg-white/50"
-              )}
-            >
-              {t('nav.become_provider')}
-            </Link>
           </div>
 
           {/* Right side */}
@@ -103,7 +92,7 @@ export function Navbar() {
 
             {!loading && (
               <div className="flex items-center gap-2 sm:gap-4">
-                {user && profile ? (
+                {user ? (
                   <>
                     <NotificationBell userId={user.id} />
 
@@ -116,10 +105,10 @@ export function Navbar() {
                         className="flex items-center gap-2 rounded-2xl bg-white border border-slate-200 p-1.5 pe-4 shadow-sm hover:shadow-md transition-all"
                       >
                         <div className="h-9 w-9 rounded-xl bg-gradient-to-br from-primary to-accent text-white flex items-center justify-center text-sm font-black shadow-lg shadow-primary/20">
-                          {profile.full_name?.[0]?.toUpperCase() || 'U'}
+                          {profile?.full_name?.[0]?.toUpperCase() || user.email?.[0]?.toUpperCase() || 'U'}
                         </div>
                         <span className="hidden lg:inline text-sm font-bold max-w-[120px] truncate text-primary">
-                          {profile.full_name || profile.email}
+                          {profile?.full_name || user.email}
                         </span>
                         <ChevronDown className={cn("h-4 w-4 text-primary/50 transition-transform duration-300", userMenuOpen && "rotate-180")} />
                       </motion.button>
@@ -142,7 +131,7 @@ export function Navbar() {
                             >
                               <div className="px-4 py-3 bg-muted/30 rounded-xl mb-2">
                                 <p className="text-[10px] font-bold text-muted-foreground uppercase tracking-widest mb-1">{t('common.account')}</p>
-                                <p className="text-sm font-bold truncate text-foreground">{profile.full_name}</p>
+                                <p className="text-sm font-bold truncate text-foreground">{profile?.full_name || user.email}</p>
                               </div>
                               
                               <div className="space-y-1">
@@ -153,7 +142,7 @@ export function Navbar() {
                                     className="flex items-center gap-3 px-4 py-2.5 text-sm font-medium hover:bg-muted rounded-xl transition-colors"
                                   >
                                     <LayoutDashboard className="h-4 w-4 text-muted-foreground" />
-                                    {profile.role === 'admin'
+                                    {profile?.role === 'admin'
                                       ? t('nav.admin_panel')
                                       : t('nav.provider_dashboard')}
                                   </Link>
@@ -236,16 +225,7 @@ export function Navbar() {
                   <Plane className="h-4 w-4 text-muted-foreground" />
                   {t('nav.browse_trips')}
                 </Link>
-                <Link
-                  href={`/${locale}/become-provider`}
-                  onClick={() => setMobileOpen(false)}
-                  className="flex items-center gap-3 px-4 py-3 text-sm font-medium text-foreground hover:bg-muted rounded-xl transition-colors"
-                >
-                  <Building2 className="h-4 w-4 text-muted-foreground" />
-                  {t('nav.become_provider')}
-                </Link>
-                
-                {user && profile && (
+                {user && (
                   <>
                     <div className="h-px bg-border/50 my-2" />
                     <Link
@@ -271,7 +251,7 @@ export function Navbar() {
                         className="flex items-center gap-3 px-4 py-3 text-sm font-medium text-foreground hover:bg-muted rounded-xl transition-colors"
                       >
                         <LayoutDashboard className="h-4 w-4 text-muted-foreground" />
-                        {profile.role === 'admin' ? t('nav.admin_panel') : t('nav.provider_dashboard')}
+                        {profile?.role === 'admin' ? t('nav.admin_panel') : t('nav.provider_dashboard')}
                       </Link>
                     )}
                   </>

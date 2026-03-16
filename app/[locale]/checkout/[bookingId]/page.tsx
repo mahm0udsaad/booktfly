@@ -17,6 +17,7 @@ import {
 import { cn, formatPrice, formatPriceEN, shortId } from '@/lib/utils'
 import { toast } from '@/components/ui/toaster'
 import { DetailPageSkeleton } from '@/components/shared/loading-skeleton'
+import { createClient } from '@/lib/supabase/client'
 import type { Booking } from '@/types'
 
 type CheckoutState = 'form' | 'processing' | 'success' | 'failed'
@@ -33,21 +34,27 @@ export default function CheckoutPage({ params }: { params: Promise<{ bookingId: 
   const [state, setState] = useState<CheckoutState>('form')
 
   // Dummy card form state
+  const [isGuest, setIsGuest] = useState(false)
   const [cardNumber, setCardNumber] = useState('')
   const [expiry, setExpiry] = useState('')
   const [cvv, setCvv] = useState('')
 
   const Back = isAr ? ChevronRight : ChevronLeft
-  const fmt = isAr ? formatPrice : formatPriceEN
+  const tripCurrency = booking?.trip?.currency || 'SAR'
+  const fmt = (amount: number) => isAr ? formatPrice(amount, tripCurrency) : formatPriceEN(amount, tripCurrency)
 
   useEffect(() => {
     async function fetchBooking() {
       try {
+        // Check if user is logged in
+        const supabase = createClient()
+        const { data: { user } } = await supabase.auth.getUser()
+        setIsGuest(!user)
+
         const res = await fetch(`/api/bookings/${bookingId}`)
         const data = await res.json()
         if (data.booking) {
           setBooking(data.booking)
-          // If already confirmed, show success
           if (data.booking.status === 'confirmed') {
             setState('success')
           }
@@ -153,17 +160,27 @@ export default function CheckoutPage({ params }: { params: Promise<{ bookingId: 
         </div>
 
         <div className="flex flex-col sm:flex-row gap-3 md:gap-4 justify-center">
+          {!isGuest && (
+            <>
+              <Link
+                href={`/${locale}/my-bookings/${bookingId}`}
+                className="inline-flex items-center justify-center px-6 md:px-8 py-3.5 md:py-4 rounded-xl md:rounded-2xl bg-primary text-white text-sm md:text-base font-bold hover:bg-primary/90 transition-all shadow-lg shadow-primary/20 hover:-translate-y-0.5"
+              >
+                {t('booking.view_booking')}
+              </Link>
+              <Link
+                href={`/${locale}/my-bookings`}
+                className="inline-flex items-center justify-center px-6 md:px-8 py-3.5 md:py-4 rounded-xl md:rounded-2xl bg-slate-50 text-slate-700 border border-slate-200 text-sm md:text-base font-bold hover:bg-slate-100 transition-all hover:-translate-y-0.5"
+              >
+                {t('booking.my_bookings_title')}
+              </Link>
+            </>
+          )}
           <Link
-            href={`/${locale}/my-bookings/${bookingId}`}
-            className="inline-flex items-center justify-center px-6 md:px-8 py-3.5 md:py-4 rounded-xl md:rounded-2xl bg-primary text-white text-sm md:text-base font-bold hover:bg-primary/90 transition-all shadow-lg shadow-primary/20 hover:-translate-y-0.5"
-          >
-            {t('booking.view_booking')}
-          </Link>
-          <Link
-            href={`/${locale}/my-bookings`}
+            href={`/${locale}/trips`}
             className="inline-flex items-center justify-center px-6 md:px-8 py-3.5 md:py-4 rounded-xl md:rounded-2xl bg-slate-50 text-slate-700 border border-slate-200 text-sm md:text-base font-bold hover:bg-slate-100 transition-all hover:-translate-y-0.5"
           >
-            {t('booking.my_bookings_title')}
+            {isAr ? 'تصفح الرحلات' : 'Browse Trips'}
           </Link>
         </div>
       </div>

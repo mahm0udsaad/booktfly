@@ -3,9 +3,23 @@ export type ProviderType = 'travel_agency' | 'hajj_umrah'
 export type ApplicationStatus = 'pending_review' | 'approved' | 'rejected'
 export type ProviderStatus = 'active' | 'suspended'
 export type TripStatus = 'active' | 'sold_out' | 'expired' | 'removed' | 'deactivated'
-export type BookingStatus = 'payment_processing' | 'confirmed' | 'payment_failed' | 'refunded' | 'cancelled'
+export type BookingStatus = 'payment_processing' | 'confirmed' | 'payment_failed' | 'refunded' | 'cancelled' | 'rejected'
 export type TripType = 'one_way' | 'round_trip'
 export type CabinClass = 'economy' | 'business' | 'first'
+export type ListingType = 'seats' | 'trip'
+export type Currency = 'SAR' | 'USD'
+export type VisaType = 'tourist' | 'umrah' | 'hajj' | 'work' | 'family_visit' | 'business_visit' | 'private_visit'
+
+export type Passenger = {
+  first_name: string
+  last_name: string
+  date_of_birth: string
+  id_number: string
+  id_expiry_date: string
+  phone: string
+  email: string
+}
+
 export type NotificationType =
   | 'application_approved'
   | 'application_rejected'
@@ -15,6 +29,7 @@ export type NotificationType =
   | 'booking_confirmed'
   | 'payment_failed'
   | 'booking_refunded'
+  | 'booking_rejected'
   | 'new_application'
   | 'provider_reapplied'
 
@@ -91,13 +106,16 @@ export type Trip = {
   destination_code: string | null
   departure_at: string
   return_at: string | null
+  listing_type: ListingType
   trip_type: TripType
   cabin_class: CabinClass
   total_seats: number
   booked_seats: number
   price_per_seat: number
+  currency: Currency
   description_ar: string | null
   description_en: string | null
+  is_direct: boolean
   image_url: string | null
   status: TripStatus
   removed_reason: string | null
@@ -110,12 +128,13 @@ export type Trip = {
 export type Booking = {
   id: string
   trip_id: string
-  buyer_id: string
+  buyer_id: string | null
   provider_id: string
   passenger_name: string
   passenger_phone: string
   passenger_email: string
   passenger_id_number: string | null
+  passengers: Passenger[] | null
   seats_count: number
   price_per_seat: number
   total_amount: number

@@ -7,6 +7,7 @@ interface HeroSectionProps {
 
 export async function HeroSection({ locale }: HeroSectionProps) {
   const t = await getTranslations('homepage')
+  const navT = await getTranslations('nav')
 
   return (
     <HeroSectionClient
@@ -16,6 +17,7 @@ export async function HeroSection({ locale }: HeroSectionProps) {
       searchFrom={t('search_from')}
       searchTo={t('search_to')}
       searchButton={t('search_button')}
+      providerCta={navT('become_provider')}
     />
   )
 }

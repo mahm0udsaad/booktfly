@@ -5,6 +5,7 @@ import { BOOKING_STATUS_COLORS } from '@/lib/constants'
 import type { Booking, BookingStatus } from '@/types'
 import { BookOpen } from 'lucide-react'
 import BookingsStatusFilter from '@/components/provider/bookings-status-filter'
+import { RejectBookingButton } from '@/components/provider/reject-booking-button'
 
 const validStatuses: BookingStatus[] = [
   'confirmed',
@@ -12,6 +13,7 @@ const validStatuses: BookingStatus[] = [
   'payment_failed',
   'refunded',
   'cancelled',
+  'rejected',
 ]
 
 type Props = {
@@ -33,7 +35,7 @@ export default async function ProviderBookingsPage({ searchParams }: Props) {
 
   let query = supabase
     .from('bookings')
-    .select('*, trip:trips(*), buyer:profiles!bookings_buyer_id_fkey(*)')
+    .select('*, trip:trips(*)')
     .eq('provider_id', provider.id)
     .order('created_at', { ascending: false })
 
@@ -74,6 +76,7 @@ export default async function ProviderBookingsPage({ searchParams }: Props) {
                   </th>
                   <th className="text-start p-3 font-medium">{tc('status')}</th>
                   <th className="text-start p-3 font-medium">{tc('date')}</th>
+                  <th className="text-start p-3 font-medium">{tc('actions')}</th>
                 </tr>
               </thead>
               <tbody className="divide-y">
@@ -92,10 +95,10 @@ export default async function ProviderBookingsPage({ searchParams }: Props) {
                     </td>
                     <td className="p-3">{booking.seats_count}</td>
                     <td className="p-3 font-medium">
-                      {formatPrice(booking.total_amount)}
+                      {formatPrice(booking.total_amount, booking.trip?.currency)}
                     </td>
                     <td className="p-3 text-muted-foreground">
-                      {formatPrice(booking.commission_amount)}
+                      {formatPrice(booking.commission_amount, booking.trip?.currency)}
                     </td>
                     <td className="p-3">
                       <span
@@ -110,6 +113,11 @@ export default async function ProviderBookingsPage({ searchParams }: Props) {
                     <td className="p-3 text-muted-foreground text-xs">
                       {new Date(booking.created_at).toLocaleDateString(
                         locale === 'ar' ? 'ar-SA' : 'en-US'
+                      )}
+                    </td>
+                    <td className="p-3">
+                      {booking.status === 'confirmed' && (
+                        <RejectBookingButton bookingId={booking.id} />
                       )}
                     </td>
                   </tr>

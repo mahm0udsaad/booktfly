@@ -2,8 +2,8 @@ import { getTranslations, getLocale } from 'next-intl/server'
 import Link from 'next/link'
 import { getProvider } from '@/lib/supabase/provider'
 import { formatPrice, cn } from '@/lib/utils'
-import { TRIP_STATUS_COLORS } from '@/lib/constants'
-import type { Trip, TripStatus } from '@/types'
+import { TRIP_STATUS_COLORS, LISTING_TYPES } from '@/lib/constants'
+import type { Trip, TripStatus, ListingType } from '@/types'
 import TripsStatusFilter from '@/components/provider/trips-status-filter'
 import {
   Plus,
@@ -114,8 +114,14 @@ export default async function ProviderTripsPage({ searchParams }: Props) {
                                 <Arrow className="h-3 w-3 text-slate-400" />
                                 {locale === 'ar' ? trip.destination_city_ar : trip.destination_city_en || trip.destination_city_ar}
                                 </p>
-                                <p className="text-xs font-semibold text-slate-500 uppercase tracking-wider">
+                                <p className="text-xs font-semibold text-slate-500 uppercase tracking-wider flex items-center gap-2">
                                 {trip.airline} {trip.flight_number && `• ${trip.flight_number}`}
+                                <span className={cn(
+                                  'px-1.5 py-0.5 rounded text-[10px] font-bold',
+                                  trip.listing_type === 'trip' ? 'bg-accent/10 text-accent' : 'bg-primary/10 text-primary'
+                                )}>
+                                  {isAr ? LISTING_TYPES[trip.listing_type || 'seats'].ar : LISTING_TYPES[trip.listing_type || 'seats'].en}
+                                </span>
                                 </p>
                            </div>
                         </div>
@@ -144,7 +150,7 @@ export default async function ProviderTripsPage({ searchParams }: Props) {
                       </td>
                       <td className="p-5">
                         <span className="font-black text-slate-900 text-base">
-                            {formatPrice(trip.price_per_seat)}
+                            {formatPrice(trip.price_per_seat, trip.currency)}
                         </span>
                       </td>
                       <td className="p-5">

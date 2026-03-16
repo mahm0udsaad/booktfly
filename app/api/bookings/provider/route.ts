@@ -33,7 +33,7 @@ export async function GET(_request: NextRequest) {
 
     const { data: bookings, error } = await supabase
       .from('bookings')
-      .select('*, trip:trips(*), buyer:profiles(*)')
+      .select('*, trip:trips(*)')
       .eq('provider_id', provider.id)
       .order('created_at', { ascending: false })
 

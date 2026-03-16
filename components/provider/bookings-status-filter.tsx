@@ -13,6 +13,7 @@ const statusOptions: (BookingStatus | 'all')[] = [
   'payment_failed',
   'refunded',
   'cancelled',
+  'rejected',
 ]
 
 export default function BookingsStatusFilter({ current }: { current: string }) {

@@ -29,14 +29,17 @@ export default async function HomePage() {
   ])
 
   return (
-    <main className="overflow-x-hidden">
+    <main className="overflow-x-hidden bg-[linear-gradient(180deg,#fffaf5_0%,#ffffff_26%,#f7fbff_58%,#fff8ef_100%)]">
       <HeroSection locale={locale} />
       
-      <StatsSection 
-        tripsCount={tripsCount.count || 0}
-        providersCount={providersCount.count || 0}
-        bookingsCount={bookingsCount.count || 0}
-      />
+      <div className="relative">
+        <div className="pointer-events-none absolute inset-x-0 top-0 h-24 bg-gradient-to-b from-transparent to-white/70" />
+        <StatsSection 
+          tripsCount={tripsCount.count || 0}
+          providersCount={providersCount.count || 0}
+          bookingsCount={bookingsCount.count || 0}
+        />
+      </div>
 
       <TrendingDestinations locale={locale} />
 
@@ -45,11 +48,20 @@ export default async function HomePage() {
         locale={locale} 
       />
 
-      <ValueProposition locale={locale} />
+      <div className="relative">
+        <div className="pointer-events-none absolute left-0 top-0 h-72 w-72 rounded-full bg-orange-100/40 blur-[110px]" />
+        <ValueProposition locale={locale} />
+      </div>
 
-      <HowItWorks />
+      <div className="relative">
+        <div className="pointer-events-none absolute right-0 top-10 h-80 w-80 rounded-full bg-sky-100/50 blur-[120px]" />
+        <HowItWorks />
+      </div>
 
-      <Testimonials locale={locale} />
+      <div className="relative">
+        <div className="pointer-events-none absolute inset-x-0 top-0 h-px bg-gradient-to-r from-transparent via-orange-200 to-transparent" />
+        <Testimonials locale={locale} />
+      </div>
 
       <BecomeProviderCTA locale={locale} />
     </main>

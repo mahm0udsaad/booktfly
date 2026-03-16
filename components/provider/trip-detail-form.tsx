@@ -199,7 +199,7 @@ export function TripDetailForm({ trip: initialTrip, bookings }: Props) {
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             <div>
               <label className="text-sm font-medium block mb-1.5">
-                {tt('price_per_seat')} ({tc('sar')})
+                {tt('price_per_seat')} ({trip.currency === 'USD' ? tc('usd') : tc('sar')})
               </label>
               <input
                 type="number"
@@ -357,7 +357,7 @@ export function TripDetailForm({ trip: initialTrip, bookings }: Props) {
                     </td>
                     <td className="p-3">{booking.seats_count}</td>
                     <td className="p-3 font-medium">
-                      {formatPrice(booking.total_amount)}
+                      {formatPrice(booking.total_amount, trip.currency)}
                     </td>
                     <td className="p-3">
                       <span

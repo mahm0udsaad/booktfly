@@ -1,9 +1,10 @@
 import { Search, CreditCard, Plane } from 'lucide-react'
-import { useTranslations } from 'next-intl'
-import { cn } from '@/lib/utils'
+import { useLocale, useTranslations } from 'next-intl'
 
 export function HowItWorks() {
   const t = useTranslations('homepage')
+  const locale = useLocale()
+  const isAr = locale === 'ar'
 
   const steps = [
     { icon: Search, title: t('step1_title'), desc: t('step1_desc') },
@@ -12,37 +13,52 @@ export function HowItWorks() {
   ]
 
   return (
-    <section className="py-24 bg-slate-50 relative overflow-hidden border-t border-slate-100">
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-        <div className="text-center mb-16 md:mb-24 animate-fade-in-up">
-          <h2 className="text-3xl md:text-4xl lg:text-5xl font-black text-slate-900 mb-4 md:mb-6">{t('how_it_works')}</h2>
-          <div className="h-1.5 w-16 bg-accent mx-auto rounded-full" />
+    <section className="relative overflow-hidden py-24 md:py-32">
+      <div className="absolute inset-0 bg-[linear-gradient(180deg,#f3f9ff_0%,#ffffff_45%,#fff5ea_100%)]" />
+      <div className="absolute -top-40 -right-20 h-96 w-96 rounded-full bg-sky-200/30 blur-[110px] pointer-events-none" />
+      <div className="absolute bottom-0 left-[-5%] h-72 w-72 rounded-full bg-orange-200/30 blur-[100px] pointer-events-none" />
+      <div className="absolute inset-x-[8%] top-0 h-px bg-gradient-to-r from-transparent via-sky-200 to-transparent" />
+
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 relative z-10">
+        <div className="mb-16 text-center animate-fade-in-up md:mb-24">
+          <p className="mb-4 text-xs font-bold uppercase tracking-[0.28em] text-orange-500">
+            {isAr ? 'كيف تبدأ' : 'How it flows'}
+          </p>
+          <h2 className="mb-6 text-4xl font-black tracking-tight text-slate-900 md:text-5xl">
+            {t('how_it_works')}
+          </h2>
+          <p className="mx-auto max-w-2xl text-lg leading-relaxed text-slate-600">
+            {isAr
+              ? 'ثلاث خطوات واضحة لتنتقل من البحث إلى الحجز بدون تعقيد أو تشتيت.'
+              : 'Three focused steps take travelers from search to payment without unnecessary friction.'}
+          </p>
         </div>
         
-        <div className="relative">
-          {/* Connector Line (Desktop) */}
-          <div className="hidden md:block absolute top-10 md:top-12 left-[16%] right-[16%] h-[2px] bg-slate-200 z-0" />
+        <div className="relative mx-auto max-w-6xl">
+          <div className="absolute left-[16%] right-[16%] top-14 z-0 hidden h-0.5 bg-gradient-to-r from-sky-200 via-orange-300 to-sky-200 md:block" />
           
-          {/* Connector Line (Mobile) */}
-          <div className="md:hidden absolute top-0 bottom-0 left-12 w-[2px] bg-slate-200 z-0 rtl:left-auto rtl:right-12" />
+          <div className="absolute bottom-0 top-0 left-[3rem] z-0 w-0.5 bg-gradient-to-b from-sky-200 via-orange-300 to-sky-200 md:hidden rtl:left-auto rtl:right-[3rem]" />
 
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-12 md:gap-16 relative z-10">
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-12 md:gap-12 relative z-10">
             {steps.map((step, idx) => (
               <div 
                 key={idx} 
-                className="relative flex flex-row md:flex-col items-center md:items-center md:text-center group animate-fade-in-up gap-6 md:gap-0"
+                className="group relative flex flex-row gap-6 rounded-[2rem] border border-white/80 bg-[linear-gradient(180deg,rgba(255,255,255,0.9),rgba(255,255,255,0.75))] p-6 shadow-lg shadow-slate-100/70 backdrop-blur-sm animate-fade-in-up md:flex-col md:items-center md:gap-0 md:p-8 md:text-center"
                 style={{ animationDelay: `${idx * 150}ms` }}
               >
-                <div className="relative h-20 w-20 md:h-24 md:w-24 shrink-0 flex items-center justify-center rounded-[1.5rem] md:rounded-[2rem] bg-white border border-slate-200 shadow-sm text-primary md:mb-8 transition-transform duration-500 group-hover:-translate-y-2 group-hover:shadow-md">
-                  <step.icon className="h-8 w-8 md:h-10 md:w-10 text-primary transition-colors duration-300 group-hover:text-accent" />
-                  <div className="absolute -top-2 -right-2 md:-top-3 md:-right-3 h-6 w-6 md:h-8 md:w-8 rounded-full bg-slate-900 text-white flex items-center justify-center font-bold text-xs md:text-sm shadow-md">
+                <div className={idx === 0 ? "absolute inset-x-6 top-0 h-1 rounded-b-full bg-sky-400/70" : idx === 1 ? "absolute inset-x-6 top-0 h-1 rounded-b-full bg-orange-400/70" : "absolute inset-x-6 top-0 h-1 rounded-b-full bg-emerald-400/70"} />
+                <div className="relative flex h-24 w-24 shrink-0 items-center justify-center rounded-full border-2 border-sky-100 bg-white shadow-lg shadow-sky-100/50 transition-transform duration-500 group-hover:-translate-y-2 group-hover:border-orange-200 group-hover:shadow-orange-100/50 md:mb-8 md:h-24 md:w-24">
+                  <div className="absolute inset-2 flex items-center justify-center rounded-full bg-sky-50 transition-colors duration-500 group-hover:bg-orange-50">
+                    <step.icon className="h-8 w-8 text-sky-700 transition-colors duration-500 group-hover:text-orange-500" />
+                  </div>
+                  <div className="absolute -right-1 -top-1 flex h-8 w-8 items-center justify-center rounded-full bg-slate-900 text-sm font-bold text-white shadow-md ring-4 ring-white md:-right-2 md:-top-2">
                     {idx + 1}
                   </div>
                 </div>
                 
-                <div className="flex flex-col flex-1">
-                  <h3 className="text-xl md:text-2xl font-bold mb-2 md:mb-4 text-slate-900">{step.title}</h3>
-                  <p className="text-sm md:text-base text-slate-500 font-medium leading-relaxed md:max-w-[280px] md:mx-auto">{step.desc}</p>
+                <div className="flex flex-1 flex-col pt-1 md:pt-0">
+                  <h3 className="mb-3 text-xl font-bold text-slate-900 transition-colors group-hover:text-sky-800 md:text-2xl">{step.title}</h3>
+                  <p className="text-base font-medium leading-relaxed text-slate-600 md:mx-auto md:max-w-[280px]">{step.desc}</p>
                 </div>
               </div>
             ))}

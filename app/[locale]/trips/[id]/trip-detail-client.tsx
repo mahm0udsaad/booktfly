@@ -14,7 +14,6 @@ import {
   Users,
   CreditCard,
   Shield,
-  Building2,
   Minus,
   Plus,
   AlertTriangle,
@@ -22,7 +21,7 @@ import {
   ChevronRight,
 } from 'lucide-react'
 import { cn, formatPrice, formatPriceEN, shortId } from '@/lib/utils'
-import { TRIP_TYPES, CABIN_CLASSES, PROVIDER_TYPES, MAX_SEATS_PER_BOOKING } from '@/lib/constants'
+import { TRIP_TYPES, CABIN_CLASSES, MAX_SEATS_PER_BOOKING } from '@/lib/constants'
 import { TripStatusBadge } from '@/components/trips/trip-status-badge'
 import { SeatsIndicator } from '@/components/trips/seats-indicator'
 import { DetailPageSkeleton } from '@/components/shared/loading-skeleton'
@@ -86,7 +85,7 @@ export default function TripDetailClient({ params }: { params: Promise<{ id: str
   const remaining = trip.total_seats - trip.booked_seats
   const maxBookable = Math.min(remaining, MAX_SEATS_PER_BOOKING)
   const totalPrice = trip.price_per_seat * seatsCount
-  const fmt = isAr ? formatPrice : formatPriceEN
+  const fmt = (amount: number) => isAr ? formatPrice(amount, trip.currency) : formatPriceEN(amount, trip.currency)
 
   const isBookable = trip.status === 'active' && remaining > 0
   const isNotAvailable = trip.status === 'expired' || trip.status === 'removed'
@@ -106,18 +105,6 @@ export default function TripDetailClient({ params }: { params: Promise<{ id: str
         isAr ? 'ar-SA' : 'en-US',
         { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' }
       )
-    : null
-
-  const providerName = trip.provider
-    ? isAr
-      ? trip.provider.company_name_ar
-      : (trip.provider.company_name_en || trip.provider.company_name_ar)
-    : null
-
-  const providerDesc = trip.provider
-    ? isAr
-      ? trip.provider.company_description_ar
-      : (trip.provider.company_description_en || trip.provider.company_description_ar)
     : null
 
   const tripDesc = isAr
@@ -151,9 +138,9 @@ export default function TripDetailClient({ params }: { params: Promise<{ id: str
         </div>
       )}
 
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 md:gap-8 items-start">
+      <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 lg:gap-10 items-start">
         {/* Main content - The Ticket */}
-        <div className="lg:col-span-2 space-y-6 md:space-y-8">
+        <div className="lg:col-span-7 xl:col-span-8 space-y-6 md:space-y-8">
           
           <div className="rounded-[2rem] md:rounded-[2.5rem] bg-white border border-slate-200 shadow-xl shadow-slate-200/50 overflow-hidden relative">
             {/* Ticket Top Decorative Edge */}
@@ -292,71 +279,11 @@ export default function TripDetailClient({ params }: { params: Promise<{ id: str
               <p className="text-sm md:text-base text-slate-600 leading-relaxed font-medium">{tripDesc}</p>
             </div>
           )}
-
-          {/* Provider card */}
-          {trip.provider && (
-            <Link
-              href={`/${locale}/providers/${trip.provider.id}`}
-              className="block rounded-[1.5rem] md:rounded-[2rem] bg-white border border-slate-200 p-6 md:p-8 shadow-sm hover:shadow-xl hover:border-primary/20 transition-all duration-300 group"
-            >
-              <h3 className="text-xs md:text-sm font-bold text-slate-400 uppercase tracking-widest mb-4 md:mb-6 flex items-center gap-2">
-                <Building2 className="h-4 w-4 md:h-5 md:w-5 text-accent" />
-                {t('trips.posted_by')}
-              </h3>
-              <div className="flex flex-col sm:flex-row sm:items-start gap-4 md:gap-6">
-                <div className="h-14 w-14 md:h-16 md:w-16 rounded-xl md:rounded-2xl bg-slate-50 border border-slate-100 flex items-center justify-center shrink-0 overflow-hidden group-hover:scale-105 transition-transform">
-                  {trip.provider.logo_url ? (
-                    <img
-                      src={trip.provider.logo_url}
-                      alt={providerName || ''}
-                      className="h-full w-full object-cover"
-                    />
-                  ) : (
-                    <Building2 className="h-6 w-6 md:h-8 md:w-8 text-slate-400" />
-                  )}
-                </div>
-                <div className="flex-1">
-                  <p className="text-lg md:text-xl font-black text-slate-900 mb-1 group-hover:text-primary transition-colors">{providerName}</p>
-                  <span className="inline-flex items-center px-2 md:px-3 py-1 rounded-md md:rounded-lg bg-accent/10 text-accent text-[10px] md:text-xs font-bold tracking-wide">
-                    {isAr
-                      ? PROVIDER_TYPES[trip.provider.provider_type].ar
-                      : PROVIDER_TYPES[trip.provider.provider_type].en}
-                  </span>
-                  {providerDesc && (
-                    <p className="text-xs md:text-sm text-slate-500 font-medium mt-2 md:mt-3 line-clamp-2 leading-relaxed">
-                      {providerDesc}
-                    </p>
-                  )}
-                  {/* Document badges */}
-                  <div className="flex flex-wrap gap-1.5 md:gap-2 mt-3 md:mt-4">
-                    {trip.provider.has_commercial_reg && (
-                      <span className="inline-flex items-center gap-1 md:gap-1.5 px-2 md:px-3 py-0.5 md:py-1 rounded-full bg-emerald-50 text-emerald-600 text-[10px] md:text-xs font-bold border border-emerald-100">
-                        <Shield className="h-3 w-3 md:h-3.5 md:w-3.5" />
-                        {isAr ? 'سجل تجاري' : 'CR Verified'}
-                      </span>
-                    )}
-                    {trip.provider.has_iata_permit && (
-                      <span className="inline-flex items-center gap-1 md:gap-1.5 px-2 md:px-3 py-0.5 md:py-1 rounded-full bg-emerald-50 text-emerald-600 text-[10px] md:text-xs font-bold border border-emerald-100">
-                        <Shield className="h-3 w-3 md:h-3.5 md:w-3.5" />
-                        IATA
-                      </span>
-                    )}
-                    {trip.provider.has_hajj_permit && (
-                      <span className="inline-flex items-center gap-1 md:gap-1.5 px-2 md:px-3 py-0.5 md:py-1 rounded-full bg-emerald-50 text-emerald-600 text-[10px] md:text-xs font-bold border border-emerald-100">
-                        <Shield className="h-3 w-3 md:h-3.5 md:w-3.5" />
-                        {isAr ? 'تصريح حج' : 'Hajj Permit'}
-                      </span>
-                    )}
-                  </div>
-                </div>
-              </div>
-            </Link>
-          )}
         </div>
 
         {/* Sidebar: Booking section (Desktop) */}
-        <div className="hidden lg:block lg:col-span-1">
-          <div className="sticky top-28 rounded-[2.5rem] bg-slate-900 text-white p-8 shadow-2xl shadow-slate-900/20 border border-slate-800 overflow-hidden">
+        <div className="hidden lg:block lg:col-span-5 xl:col-span-4">
+          <div className="sticky top-32 rounded-[2.5rem] bg-slate-900 text-white p-8 shadow-2xl shadow-slate-900/20 border border-slate-800 overflow-hidden">
              {/* Background glow */}
              <div className="absolute top-0 right-0 w-48 h-48 bg-primary/20 rounded-full blur-3xl -mr-20 -mt-20 pointer-events-none" />
 

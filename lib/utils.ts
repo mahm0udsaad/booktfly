@@ -5,19 +5,19 @@ export function cn(...inputs: ClassValue[]) {
   return twMerge(clsx(inputs))
 }
 
-export function formatPrice(amount: number): string {
+export function formatPrice(amount: number, currency: string = 'SAR'): string {
   return new Intl.NumberFormat('ar-SA', {
     style: 'currency',
-    currency: 'SAR',
+    currency,
     minimumFractionDigits: 0,
     maximumFractionDigits: 2,
   }).format(amount)
 }
 
-export function formatPriceEN(amount: number): string {
+export function formatPriceEN(amount: number, currency: string = 'SAR'): string {
   return new Intl.NumberFormat('en-SA', {
     style: 'currency',
-    currency: 'SAR',
+    currency,
     minimumFractionDigits: 0,
     maximumFractionDigits: 2,
   }).format(amount)

@@ -48,6 +48,7 @@ export function getProviderApplicationSchema(locale: Locale = 'ar') {
 
 export function getTripSchema(locale: Locale = 'ar') {
   return z.object({
+    listing_type: z.enum(['seats', 'trip']),
     airline: z.string().min(1, v(locale, 'airline_required')),
     flight_number: z.string().optional(),
     origin_city_ar: z.string().min(1, v(locale, 'origin_required')),
@@ -62,19 +63,27 @@ export function getTripSchema(locale: Locale = 'ar') {
     cabin_class: z.enum(['economy', 'business', 'first']),
     total_seats: z.number().min(1, v(locale, 'seats_required')),
     price_per_seat: z.number().min(1, v(locale, 'price_required')),
+    currency: z.enum(['SAR', 'USD']),
     description_ar: z.string().optional(),
     description_en: z.string().optional(),
   })
 }
 
+export const passengerSchema = z.object({
+  first_name: z.string().min(2, 'First name is required'),
+  last_name: z.string().min(2, 'Last name is required'),
+  date_of_birth: z.string().min(1, 'Date of birth is required'),
+  id_number: z.string().min(4, 'ID/Passport number is required'),
+  id_expiry_date: z.string().min(1, 'ID expiry date is required'),
+  phone: z.string().min(9, 'Phone number is required'),
+  email: z.string().email('Invalid email'),
+})
+
 export function getBookingSchema(locale: Locale = 'ar') {
   return z.object({
     trip_id: z.string().uuid(),
-    passenger_name: z.string().min(2, v(locale, 'passenger_name_required')),
-    passenger_phone: z.string().min(9, v(locale, 'passenger_phone_required')),
-    passenger_email: z.string().email(v(locale, 'passenger_email_invalid')),
-    passenger_id_number: z.string().optional(),
     seats_count: z.number().min(1).max(10),
+    passengers: z.array(passengerSchema).min(1),
   })
 }
 

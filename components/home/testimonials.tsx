@@ -59,55 +59,64 @@ export function Testimonials({ locale }: TestimonialsProps) {
   const marqueeReviews = [...reviews, ...reviews]
 
   return (
-    <section className="py-24 bg-slate-50 overflow-hidden relative border-t border-slate-100">
-      <div className="absolute inset-0 bg-[url('/noise.png')] opacity-[0.015] mix-blend-overlay pointer-events-none" />
-      
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 text-center mb-16 relative z-10">
-        <h2 className="text-4xl lg:text-5xl font-black text-slate-900 mb-6 tracking-tight">
+    <section className="relative overflow-hidden py-24 md:py-32">
+      <div className="absolute inset-0 bg-[linear-gradient(180deg,#ffffff_0%,#f9fbff_35%,#fff7ed_100%)]" />
+      <div className="absolute left-[-10%] top-10 h-72 w-72 rounded-full bg-sky-100/50 blur-[100px] pointer-events-none" />
+      <div className="absolute bottom-0 right-[-10%] h-80 w-80 rounded-full bg-orange-100/50 blur-[110px] pointer-events-none" />
+
+      <div className="relative z-10 mx-auto mb-20 max-w-7xl px-4 text-center sm:px-6 lg:px-8">
+        <p className="mb-4 text-xs font-bold uppercase tracking-[0.28em] text-sky-700">
+          {isAr ? 'آراء المسافرين' : 'Traveler feedback'}
+        </p>
+        <h2 className="mb-6 text-4xl font-serif font-bold tracking-wide text-[#111111] md:text-[3.5rem]">
           {isAr ? 'ماذا يقول عملاؤنا' : 'What Our Users Say'}
         </h2>
-        <div className="flex items-center justify-center gap-2 text-xl font-bold text-slate-600">
-          <span className="text-accent">4.9/5</span>
-          <span>{isAr ? 'تقييم من آلاف المسافرين' : 'Rating from thousands of travelers'}</span>
+        <div className="flex items-center justify-center gap-3 font-serif text-lg text-slate-600 md:text-xl">
+          <span className="rounded-xl border border-orange-100 bg-white px-4 py-1.5 font-bold text-slate-800 shadow-sm">4.9/5</span>
+          <span className="font-medium">{isAr ? 'تقييم من آلاف المسافرين' : 'Rating from thousands of travelers'}</span>
         </div>
       </div>
 
       <div className="relative flex w-full group py-8">
-        {/* Left and Right Fade Gradients */}
-        <div className="absolute top-0 bottom-0 left-0 w-32 bg-gradient-to-r from-slate-50 to-transparent z-10 pointer-events-none" />
-        <div className="absolute top-0 bottom-0 right-0 w-32 bg-gradient-to-l from-slate-50 to-transparent z-10 pointer-events-none" />
+        <div className="absolute bottom-0 left-0 top-0 z-10 w-32 bg-gradient-to-r from-white via-white/90 to-transparent pointer-events-none md:w-64" />
+        <div className="absolute bottom-0 right-0 top-0 z-10 w-32 bg-gradient-to-l from-white via-white/90 to-transparent pointer-events-none md:w-64" />
 
         <div className="flex w-fit animate-marquee hover:[animation-play-state:paused]" style={{
             animationDirection: isAr ? 'reverse' : 'normal'
         }}>
-          {marqueeReviews.map((review, idx) => (
-            <div
-              key={idx}
-              className="w-[320px] md:w-[420px] flex-shrink-0 bg-white rounded-3xl p-8 shadow-sm border border-slate-200 mx-3"
-            >
-              <div className="flex items-center gap-1 mb-6">
-                {[...Array(review.rating)].map((_, i) => (
-                  <Star key={i} className="h-5 w-5 fill-accent text-accent" />
-                ))}
-              </div>
-              <p className="text-lg font-medium text-slate-800 mb-8 whitespace-normal leading-relaxed">
-                "{isAr ? review.textAr : review.textEn}"
-              </p>
-              <div className="flex items-center gap-4">
-                <div className="h-12 w-12 rounded-full bg-slate-100 text-slate-900 flex items-center justify-center font-bold text-lg border border-slate-200">
-                  {isAr ? review.nameAr[0] : review.nameEn[0]}
+          {marqueeReviews.map((review, idx) => {
+            const isHoveredOrMiddle = idx % 2 !== 0 // Simulate the effect from screenshot where some are muted
+            
+            return (
+              <div
+                key={idx}
+                className="group/card relative mx-4 w-[320px] flex-shrink-0 rounded-[2rem] border border-slate-200/80 bg-[linear-gradient(180deg,rgba(255,255,255,0.94),rgba(255,250,245,0.9))] p-8 shadow-lg shadow-slate-100/70 transition-all duration-300 hover:-translate-y-2 hover:border-orange-200 hover:shadow-xl md:w-[420px] md:p-10"
+              >
+                <div className={`absolute inset-x-8 top-0 h-1 rounded-b-full ${isHoveredOrMiddle ? 'bg-gradient-to-r from-sky-400 via-orange-400 to-emerald-400' : 'bg-slate-100'}`} />
+                <div className="flex items-center gap-1 mb-8">
+                  {[...Array(review.rating)].map((_, i) => (
+                    <Star key={i} className={`h-5 w-5 fill-current ${isHoveredOrMiddle ? 'text-orange-300 group-hover/card:text-orange-400' : 'text-slate-100'}`} />
+                  ))}
                 </div>
-                <div>
-                  <h4 className="font-bold text-slate-900 text-base">
-                    {isAr ? review.nameAr : review.nameEn}
-                  </h4>
-                  <p className="text-sm font-medium text-slate-500">
-                    {isAr ? review.roleAr : review.roleEn}
-                  </p>
+                <p className={`mb-12 whitespace-normal text-lg font-serif leading-relaxed ${isHoveredOrMiddle ? 'text-[#111111]' : 'text-slate-300'}`}>
+                  "{isAr ? review.textAr : review.textEn}"
+                </p>
+                <div className="flex items-center gap-4 mt-auto">
+                  <div className={`flex h-14 w-14 items-center justify-center rounded-full border text-xl font-serif font-bold ${isHoveredOrMiddle ? 'border-sky-100 bg-sky-50 text-[#111111]' : 'border-slate-100 bg-slate-50 text-slate-300'}`}>
+                    {isAr ? review.nameAr[0] : review.nameEn[0]}
+                  </div>
+                  <div>
+                    <h4 className={`font-bold font-serif text-lg ${isHoveredOrMiddle ? 'text-[#111111]' : 'text-slate-300'}`}>
+                      {isAr ? review.nameAr : review.nameEn}
+                    </h4>
+                    <p className={`mt-1 inline-flex rounded-full px-3 py-1 text-[13px] font-semibold ${isHoveredOrMiddle ? 'bg-orange-50 text-orange-700' : 'bg-slate-50 text-slate-300'}`}>
+                      {isAr ? review.roleAr : review.roleEn}
+                    </p>
+                  </div>
                 </div>
               </div>
-            </div>
-          ))}
+            )
+          })}
         </div>
         
         {/* Add custom CSS for animation */}

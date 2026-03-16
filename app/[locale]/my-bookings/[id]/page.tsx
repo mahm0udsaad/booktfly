@@ -40,7 +40,6 @@ export default function BookingDetailPage() {
 
   const Arrow = isAr ? ArrowLeft : ArrowRight
   const Back = isAr ? ChevronRight : ChevronLeft
-  const fmt = isAr ? formatPrice : formatPriceEN
 
   useEffect(() => {
     async function fetchBooking() {
@@ -78,6 +77,7 @@ export default function BookingDetailPage() {
 
   const trip = booking.trip
   const provider = booking.provider || trip?.provider
+  const fmt = (amount: number) => isAr ? formatPrice(amount, trip?.currency) : formatPriceEN(amount, trip?.currency)
 
   const originCity = trip
     ? isAr
@@ -253,6 +253,55 @@ export default function BookingDetailPage() {
             )}
           </div>
         </div>
+
+        {/* Passengers info */}
+        {booking.passengers && booking.passengers.length > 0 && (
+          <div className="rounded-xl border bg-card p-6">
+            <h3 className="font-semibold text-foreground mb-4 flex items-center gap-2">
+              <User className="h-4 w-4 text-accent" />
+              {t('booking.passenger_info')}
+            </h3>
+            <div className="space-y-4">
+              {booking.passengers.map((p, i) => (
+                <div key={i} className={cn("grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-3", i > 0 && "pt-4 border-t")}>
+                  <div className="sm:col-span-2 md:col-span-3">
+                    <span className="text-xs font-bold text-primary uppercase tracking-widest">
+                      {t('booking.passenger_number', { number: i + 1 })}
+                    </span>
+                  </div>
+                  <div>
+                    <span className="text-xs text-muted-foreground">{isAr ? 'الاسم الأول' : 'First Name'}</span>
+                    <p className="text-sm font-medium">{p.first_name}</p>
+                  </div>
+                  <div>
+                    <span className="text-xs text-muted-foreground">{isAr ? 'الاسم الأخير' : 'Last Name'}</span>
+                    <p className="text-sm font-medium">{p.last_name}</p>
+                  </div>
+                  <div>
+                    <span className="text-xs text-muted-foreground">{isAr ? 'تاريخ الميلاد' : 'Date of Birth'}</span>
+                    <p className="text-sm font-medium" dir="ltr">{p.date_of_birth}</p>
+                  </div>
+                  <div>
+                    <span className="text-xs text-muted-foreground">{isAr ? 'رقم الجواز أو البطاقة' : 'Passport / ID Number'}</span>
+                    <p className="text-sm font-medium" dir="ltr">{p.id_number}</p>
+                  </div>
+                  <div>
+                    <span className="text-xs text-muted-foreground">{isAr ? 'تاريخ انتهاء الإثبات' : 'ID Expiry Date'}</span>
+                    <p className="text-sm font-medium" dir="ltr">{p.id_expiry_date}</p>
+                  </div>
+                  <div>
+                    <span className="text-xs text-muted-foreground">{isAr ? 'رقم الجوال' : 'Phone'}</span>
+                    <p className="text-sm font-medium" dir="ltr">{p.phone}</p>
+                  </div>
+                  <div>
+                    <span className="text-xs text-muted-foreground">{isAr ? 'البريد الإلكتروني' : 'Email'}</span>
+                    <p className="text-sm font-medium" dir="ltr">{p.email}</p>
+                  </div>
+                </div>
+              ))}
+            </div>
+          </div>
+        )}
 
         {/* Payment details */}
         <div className="rounded-xl border bg-card p-6">

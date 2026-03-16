@@ -102,6 +102,31 @@ export default function AdminBookingDetail() {
           </div>
         </div>
 
+        {/* Passengers */}
+        {booking.passengers && booking.passengers.length > 0 && (
+          <div className="bg-white rounded-xl border p-6">
+            <h3 className="font-semibold mb-3">{t('booking.passenger_info')}</h3>
+            <div className="space-y-4">
+              {booking.passengers.map((p: any, i: number) => (
+                <div key={i} className={`grid grid-cols-2 md:grid-cols-3 gap-3 text-sm ${i > 0 ? 'pt-4 border-t' : ''}`}>
+                  <div className="col-span-2 md:col-span-3">
+                    <span className="text-xs font-bold text-primary uppercase tracking-widest">
+                      {t('booking.passenger_number', { number: i + 1 })}
+                    </span>
+                  </div>
+                  <div><p className="text-muted-foreground">{locale === 'ar' ? 'الاسم الأول' : 'First Name'}</p><p className="font-medium">{p.first_name}</p></div>
+                  <div><p className="text-muted-foreground">{locale === 'ar' ? 'الاسم الأخير' : 'Last Name'}</p><p className="font-medium">{p.last_name}</p></div>
+                  <div><p className="text-muted-foreground">{locale === 'ar' ? 'تاريخ الميلاد' : 'Date of Birth'}</p><p className="font-medium" dir="ltr">{p.date_of_birth}</p></div>
+                  <div><p className="text-muted-foreground">{locale === 'ar' ? 'رقم الجواز أو البطاقة' : 'Passport / ID'}</p><p className="font-medium" dir="ltr">{p.id_number}</p></div>
+                  <div><p className="text-muted-foreground">{locale === 'ar' ? 'تاريخ انتهاء الإثبات' : 'ID Expiry'}</p><p className="font-medium" dir="ltr">{p.id_expiry_date}</p></div>
+                  <div><p className="text-muted-foreground">{locale === 'ar' ? 'الجوال' : 'Phone'}</p><p className="font-medium" dir="ltr">{p.phone}</p></div>
+                  <div><p className="text-muted-foreground">{locale === 'ar' ? 'البريد الإلكتروني' : 'Email'}</p><p className="font-medium" dir="ltr">{p.email}</p></div>
+                </div>
+              ))}
+            </div>
+          </div>
+        )}
+
         {/* Payment */}
         <div className="bg-white rounded-xl border p-6">
           <h3 className="font-semibold mb-3">{t('booking.payment_details')}</h3>

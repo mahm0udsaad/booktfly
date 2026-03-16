@@ -17,17 +17,10 @@ export async function POST(_request: NextRequest, { params }: RouteParams) {
     const { id } = await params
     const supabase = await createClient()
 
-    // Check auth
+    // Auth is optional - guests can confirm their booking
     const {
       data: { user },
     } = await supabase.auth.getUser()
-
-    if (!user) {
-      return NextResponse.json(
-        { error: 'Unauthorized' },
-        { status: 401 }
-      )
-    }
 
     // Fetch booking
     const { data: booking, error: fetchError } = await supabaseAdmin
@@ -43,8 +36,8 @@ export async function POST(_request: NextRequest, { params }: RouteParams) {
       )
     }
 
-    // Only the buyer who owns the booking can confirm payment
-    if (booking.buyer_id !== user.id) {
+    // If booking has a buyer_id, only that buyer can confirm
+    if (booking.buyer_id && (!user || booking.buyer_id !== user.id)) {
       return NextResponse.json(
         { error: 'Forbidden' },
         { status: 403 }
@@ -81,16 +74,18 @@ export async function POST(_request: NextRequest, { params }: RouteParams) {
     const tripOriginEn = booking.trip?.origin_city_en || tripOrigin
     const tripDestEn = booking.trip?.destination_city_en || tripDest
 
-    // Notify buyer
-    await notify({
-      userId: booking.buyer_id,
-      type: 'booking_confirmed',
-      titleAr: 'تم تأكيد حجزك بنجاح',
-      titleEn: 'Your booking has been confirmed',
-      bodyAr: `تم تأكيد حجزك رقم ${ref} للرحلة من ${tripOrigin} إلى ${tripDest}`,
-      bodyEn: `Your booking #${ref} for the trip from ${tripOriginEn} to ${tripDestEn} has been confirmed.`,
-      data: { bookingId: id },
-    })
+    // Notify buyer (only if authenticated user)
+    if (booking.buyer_id) {
+      await notify({
+        userId: booking.buyer_id,
+        type: 'booking_confirmed',
+        titleAr: 'تم تأكيد حجزك بنجاح',
+        titleEn: 'Your booking has been confirmed',
+        bodyAr: `تم تأكيد حجزك رقم ${ref} للرحلة من ${tripOrigin} إلى ${tripDest}`,
+        bodyEn: `Your booking #${ref} for the trip from ${tripOriginEn} to ${tripDestEn} has been confirmed.`,
+        data: { booking_id: id },
+      })
+    }
 
     // Notify provider
     if (booking.provider?.user_id) {
@@ -101,7 +96,7 @@ export async function POST(_request: NextRequest, { params }: RouteParams) {
         titleEn: 'You have a new booking',
         bodyAr: `تم استلام حجز جديد رقم ${ref} للرحلة من ${tripOrigin} إلى ${tripDest} - ${booking.seats_count} مقاعد`,
         bodyEn: `New booking #${ref} received for the trip from ${tripOriginEn} to ${tripDestEn} - ${booking.seats_count} seat(s).`,
-        data: { bookingId: id },
+        data: { booking_id: id },
       })
     }
 

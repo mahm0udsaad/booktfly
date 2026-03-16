@@ -21,6 +21,7 @@ export async function GET(request: NextRequest) {
     const priceMax = searchParams.get('price_max')
     const tripType = searchParams.get('trip_type')
     const cabinClass = searchParams.get('cabin_class')
+    const directOnly = searchParams.get('direct_only')
     const sort = searchParams.get('sort') || 'newest'
     const page = parseInt(searchParams.get('page') || '1', 10)
     const limit = parseInt(searchParams.get('limit') || '12', 10)
@@ -71,6 +72,10 @@ export async function GET(request: NextRequest) {
 
     if (cabinClass) {
       query = query.eq('cabin_class', cabinClass)
+    }
+
+    if (directOnly === 'true') {
+      query = query.eq('is_direct', true)
     }
 
     // Sorting
@@ -164,6 +169,7 @@ export async function POST(request: NextRequest) {
     const formData = await request.formData()
 
     const rawData = {
+      listing_type: (formData.get('listing_type') as string) || 'seats',
       airline: formData.get('airline') as string,
       flight_number: (formData.get('flight_number') as string) || undefined,
       origin_city_ar: formData.get('origin_city_ar') as string,
@@ -178,6 +184,7 @@ export async function POST(request: NextRequest) {
       cabin_class: formData.get('cabin_class') as string,
       total_seats: Number(formData.get('total_seats')),
       price_per_seat: Number(formData.get('price_per_seat')),
+      currency: (formData.get('currency') as string) || 'SAR',
       description_ar: (formData.get('description_ar') as string) || undefined,
       description_en: (formData.get('description_en') as string) || undefined,
     }
@@ -218,6 +225,7 @@ export async function POST(request: NextRequest) {
       .from('trips')
       .insert({
         provider_id: provider.id,
+        listing_type: parsed.data.listing_type,
         airline: parsed.data.airline,
         flight_number: parsed.data.flight_number || null,
         origin_city_ar: parsed.data.origin_city_ar,
@@ -233,6 +241,7 @@ export async function POST(request: NextRequest) {
         total_seats: parsed.data.total_seats,
         booked_seats: 0,
         price_per_seat: parsed.data.price_per_seat,
+        currency: parsed.data.currency,
         description_ar: parsed.data.description_ar || null,
         description_en: parsed.data.description_en || null,
         image_url: imageUrl,

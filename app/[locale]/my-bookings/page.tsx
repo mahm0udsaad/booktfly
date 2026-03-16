@@ -42,7 +42,7 @@ export default function MyBookingsPage() {
     fetchBookings()
   }, [])
 
-  const fmt = isAr ? formatPrice : formatPriceEN
+  const fmt = (amount: number, currency?: string) => isAr ? formatPrice(amount, currency || 'SAR') : formatPriceEN(amount, currency || 'SAR')
 
   return (
     <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
@@ -132,7 +132,7 @@ export default function MyBookingsPage() {
                       </span>
                     </div>
                     <span className="text-lg font-bold text-accent">
-                      {fmt(booking.total_amount)}
+                      {fmt(booking.total_amount, booking.trip?.currency)}
                     </span>
                   </div>
                 </div>

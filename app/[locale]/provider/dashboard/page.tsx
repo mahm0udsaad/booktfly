@@ -61,7 +61,7 @@ export default async function ProviderDashboardPage() {
       .eq('status', 'confirmed'),
     supabase
       .from('bookings')
-      .select('*, trip:trips(*), buyer:profiles!bookings_buyer_id_fkey(*)')
+      .select('*, trip:trips(*)')
       .eq('provider_id', provider.id)
       .order('created_at', { ascending: false })
       .limit(5),
@@ -174,7 +174,7 @@ export default async function ProviderDashboardPage() {
                 </div>
                 <div className="flex flex-col items-end gap-2 shrink-0">
                   <p className="text-lg font-black text-slate-900">
-                    {formatPrice(booking.total_amount)}
+                    {formatPrice(booking.total_amount, booking.trip?.currency)}
                   </p>
                   <span
                     className={cn(

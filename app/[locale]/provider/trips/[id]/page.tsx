@@ -24,7 +24,7 @@ export default async function TripDetailPage({ params }: Props) {
 
   const { data: bookings } = await supabase
     .from('bookings')
-    .select('*, buyer:profiles!bookings_buyer_id_fkey(*)')
+    .select('*')
     .eq('trip_id', tripId)
     .order('created_at', { ascending: false })
 

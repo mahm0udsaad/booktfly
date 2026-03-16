@@ -1,8 +1,8 @@
 'use client'
 
 import { useLocale } from 'next-intl'
-import { useRouter, usePathname } from 'next/navigation'
 import { Globe } from 'lucide-react'
+import { usePathname, useRouter } from '@/i18n/navigation'
 
 export function LanguageSwitcher() {
   const locale = useLocale()
@@ -11,12 +11,13 @@ export function LanguageSwitcher() {
 
   const switchLocale = () => {
     const newLocale = locale === 'ar' ? 'en' : 'ar'
-    const newPath = pathname.replace(`/${locale}`, `/${newLocale}`)
-    router.push(newPath)
+    router.replace(pathname, { locale: newLocale })
+    router.refresh()
   }
 
   return (
     <button
+      type="button"
       onClick={switchLocale}
       className="flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg text-sm font-medium text-muted-foreground hover:text-foreground hover:bg-muted transition-colors"
       title={locale === 'ar' ? 'English' : 'العربية'}

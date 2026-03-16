@@ -3,7 +3,7 @@
 import { Suspense, useEffect, useState, use } from 'react'
 import { useLocale, useTranslations } from 'next-intl'
 import { useRouter, useSearchParams } from 'next/navigation'
-import { useForm } from 'react-hook-form'
+import { useForm, useFieldArray } from 'react-hook-form'
 import { zodResolver } from '@hookform/resolvers/zod'
 import { z } from 'zod'
 import {
@@ -18,21 +18,24 @@ import {
   User,
   Phone,
   Mail,
-  CreditCard,
-  IdCard,
-  MapPin,
   Calendar,
-  ShieldCheck
+  ShieldCheck,
+  CheckCircle,
+  Cake,
+  IdCard,
 } from 'lucide-react'
 import { cn, formatPrice, formatPriceEN } from '@/lib/utils'
 import { MAX_SEATS_PER_BOOKING } from '@/lib/constants'
 import { TRIP_TYPES, CABIN_CLASSES } from '@/lib/constants'
 import { DetailPageSkeleton } from '@/components/shared/loading-skeleton'
-import { getBookingSchema } from '@/lib/validations'
+import { getBookingSchema, passengerSchema } from '@/lib/validations'
 import { toast } from '@/components/ui/toaster'
 import type { Trip } from '@/types'
 
-type BookingFormData = { passenger_name: string; passenger_phone: string; passenger_email: string; passenger_id_number?: string }
+type PassengerFormData = z.infer<typeof passengerSchema>
+type BookingFormData = {
+  passengers: PassengerFormData[]
+}
 
 export default function BookTripPage({ params }: { params: Promise<{ id: string, locale: string }> }) {
   return (
@@ -53,20 +56,51 @@ function BookTripContent({ params }: { params: Promise<{ id: string, locale: str
   const [trip, setTrip] = useState<Trip | null>(null)
   const [loading, setLoading] = useState(true)
   const [submitting, setSubmitting] = useState(false)
-  const [seatsCount, setSeatsCount] = useState(
-    parseInt(searchParams.get('seats') || '1', 10)
-  )
+  const initialSeatsCount = parseInt(searchParams.get('seats') || '1', 10)
+  const [seatsCount, setSeatsCount] = useState(initialSeatsCount)
 
   const Arrow = isAr ? ArrowLeft : ArrowRight
   const Back = isAr ? ChevronRight : ChevronLeft
 
+  const defaultPassenger: PassengerFormData = {
+    first_name: '',
+    last_name: '',
+    date_of_birth: '',
+    id_number: '',
+    id_expiry_date: '',
+    phone: '',
+    email: '',
+  }
+
   const {
     register,
     handleSubmit,
+    control,
     formState: { errors },
   } = useForm<BookingFormData>({
-    resolver: zodResolver(getBookingSchema(locale).omit({ trip_id: true, seats_count: true })),
+    resolver: zodResolver(
+      getBookingSchema(locale).pick({ passengers: true })
+    ),
+    defaultValues: {
+      passengers: Array(initialSeatsCount).fill(defaultPassenger),
+    },
   })
+
+  const { fields, append, remove } = useFieldArray({
+    control,
+    name: 'passengers',
+  })
+
+  useEffect(() => {
+    const currentCount = fields.length
+    if (seatsCount > currentCount) {
+      append(Array(seatsCount - currentCount).fill(defaultPassenger))
+    } else if (seatsCount < currentCount) {
+      for (let i = currentCount - 1; i >= seatsCount; i--) {
+        remove(i)
+      }
+    }
+  }, [seatsCount])
 
   useEffect(() => {
     async function fetchTrip() {
@@ -95,7 +129,7 @@ function BookTripContent({ params }: { params: Promise<{ id: string, locale: str
   const remaining = trip.total_seats - trip.booked_seats
   const maxBookable = Math.min(remaining, MAX_SEATS_PER_BOOKING)
   const totalPrice = trip.price_per_seat * seatsCount
-  const fmt = isAr ? formatPrice : formatPriceEN
+  const fmt = (amount: number) => isAr ? formatPrice(amount, trip.currency) : formatPriceEN(amount, trip.currency)
 
   const originCity = isAr ? trip.origin_city_ar : (trip.origin_city_en || trip.origin_city_ar)
   const destCity = isAr ? trip.destination_city_ar : (trip.destination_city_en || trip.destination_city_ar)
@@ -108,16 +142,17 @@ function BookTripContent({ params }: { params: Promise<{ id: string, locale: str
   const onSubmit = async (data: BookingFormData) => {
     setSubmitting(true)
     try {
+      const firstPassenger = data.passengers[0]
       const res = await fetch('/api/bookings', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           trip_id: tripId,
-          passenger_name: data.passenger_name,
-          passenger_phone: data.passenger_phone,
-          passenger_email: data.passenger_email,
-          passenger_id_number: data.passenger_id_number || undefined,
+          passenger_name: `${firstPassenger.first_name} ${firstPassenger.last_name}`,
+          passenger_phone: firstPassenger.phone,
+          passenger_email: firstPassenger.email,
           seats_count: seatsCount,
+          passengers: data.passengers,
         }),
       })
 
@@ -132,8 +167,7 @@ function BookTripContent({ params }: { params: Promise<{ id: string, locale: str
         return
       }
 
-      // Redirect to checkout page
-      router.push(`/${locale}/checkout/${result.bookingId}`)
+      router.push(`/${locale}/my-bookings/${result.bookingId}`)
     } catch {
       toast({
         title: t('common.error'),
@@ -144,6 +178,10 @@ function BookTripContent({ params }: { params: Promise<{ id: string, locale: str
       setSubmitting(false)
     }
   }
+
+  const inputClass = 'w-full h-12 md:h-14 px-4 md:px-5 rounded-xl md:rounded-2xl bg-slate-50 border-none text-slate-900 text-base md:text-lg font-semibold focus:ring-2 focus:ring-primary focus:outline-none transition-colors hover:bg-slate-100'
+  const errorInputClass = 'ring-2 ring-destructive bg-destructive/5'
+  const labelClass = 'flex items-center gap-1.5 md:gap-2 text-[10px] md:text-xs font-bold text-slate-500 uppercase tracking-widest'
 
   return (
     <>
@@ -161,17 +199,17 @@ function BookTripContent({ params }: { params: Promise<{ id: string, locale: str
 
       <div className="mb-8 md:mb-10">
          <h1 className="text-2xl sm:text-3xl md:text-4xl font-black text-slate-900 mb-2 tracking-tight">{t('booking.title')}</h1>
-         <p className="text-sm md:text-lg text-slate-500 font-medium">{isAr ? 'أدخل بيانات المسافر لإتمام الحجز' : 'Enter passenger details to complete your booking'}</p>
+         <p className="text-sm md:text-lg text-slate-500 font-medium">{isAr ? 'أدخل بيانات المسافرين لإتمام الحجز' : 'Enter passenger details to complete your booking'}</p>
       </div>
 
       <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 md:gap-8 items-start">
         {/* Form Area */}
         <div className="lg:col-span-8 space-y-6 md:space-y-8">
-          
+
           {/* Trip summary card (Mini Ticket) */}
           <div className="rounded-[1.5rem] md:rounded-[2rem] border border-slate-200 bg-white p-5 md:p-6 shadow-sm flex flex-col sm:flex-row sm:items-center justify-between gap-4 md:gap-6 relative overflow-hidden">
              <div className="absolute left-0 top-0 bottom-0 w-1.5 bg-primary" />
-             
+
              <div className="flex-1 ml-4 rtl:ml-0 rtl:mr-4">
                  <div className="flex items-center gap-2 md:gap-3 mb-3 md:mb-4">
                     <div className="h-8 w-8 md:h-10 md:w-10 rounded-lg md:rounded-xl bg-slate-50 flex items-center justify-center border border-slate-100 shrink-0">
@@ -210,97 +248,148 @@ function BookTripContent({ params }: { params: Promise<{ id: string, locale: str
              </div>
           </div>
 
-          {/* Passenger form */}
+          {/* Booking form */}
           <form onSubmit={handleSubmit(onSubmit)} className="space-y-6 md:space-y-8" id="booking-form">
-            <div className="rounded-[1.5rem] md:rounded-[2.5rem] border border-slate-200 bg-white p-6 sm:p-8 md:p-10 shadow-xl shadow-slate-200/40">
-              <div className="flex items-center gap-2 md:gap-3 mb-6 md:mb-8">
-                 <div className="h-10 w-10 md:h-12 md:w-12 rounded-xl md:rounded-2xl bg-accent/10 flex items-center justify-center shrink-0">
-                    <User className="h-5 w-5 md:h-6 md:w-6 text-accent" />
-                 </div>
-                 <h3 className="text-xl md:text-2xl font-black text-slate-900">{t('booking.passenger_details')}</h3>
+            {fields.map((field, index) => (
+              <div key={field.id} className="rounded-[1.5rem] md:rounded-[2.5rem] border border-slate-200 bg-white p-6 sm:p-8 md:p-10 shadow-xl shadow-slate-200/40">
+                <div className="flex items-center gap-2 md:gap-3 mb-6 md:mb-8">
+                   <div className="h-10 w-10 md:h-12 md:w-12 rounded-xl md:rounded-2xl bg-primary/10 flex items-center justify-center shrink-0">
+                      <span className="text-lg md:text-xl font-black text-primary">{index + 1}</span>
+                   </div>
+                   <h3 className="text-xl md:text-2xl font-black text-slate-900">
+                     {t('booking.passenger_number', { number: index + 1 })}
+                   </h3>
+                </div>
+
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-5 md:gap-6">
+                    {/* First Name */}
+                    <div className="space-y-1.5 md:space-y-2">
+                      <label className={labelClass}>
+                        <User className="h-3.5 w-3.5 md:h-4 md:w-4" />
+                        {isAr ? 'الاسم الأول' : 'First Name'}
+                        <span className="text-destructive">*</span>
+                      </label>
+                      <input
+                        {...register(`passengers.${index}.first_name`)}
+                        className={cn(inputClass, errors.passengers?.[index]?.first_name && errorInputClass)}
+                        placeholder={isAr ? 'الاسم الأول' : 'First Name'}
+                      />
+                      {errors.passengers?.[index]?.first_name && (
+                        <p className="text-xs font-bold text-destructive mt-1">{errors.passengers[index].first_name.message}</p>
+                      )}
+                    </div>
+
+                    {/* Last Name */}
+                    <div className="space-y-1.5 md:space-y-2">
+                      <label className={labelClass}>
+                        <User className="h-3.5 w-3.5 md:h-4 md:w-4" />
+                        {isAr ? 'الاسم الأخير' : 'Last Name'}
+                        <span className="text-destructive">*</span>
+                      </label>
+                      <input
+                        {...register(`passengers.${index}.last_name`)}
+                        className={cn(inputClass, errors.passengers?.[index]?.last_name && errorInputClass)}
+                        placeholder={isAr ? 'الاسم الأخير' : 'Last Name'}
+                      />
+                      {errors.passengers?.[index]?.last_name && (
+                        <p className="text-xs font-bold text-destructive mt-1">{errors.passengers[index].last_name.message}</p>
+                      )}
+                    </div>
+
+                    {/* Date of Birth */}
+                    <div className="space-y-1.5 md:space-y-2">
+                      <label className={labelClass}>
+                        <Cake className="h-3.5 w-3.5 md:h-4 md:w-4" />
+                        {isAr ? 'تاريخ الميلاد' : 'Date of Birth'}
+                        <span className="text-destructive">*</span>
+                      </label>
+                      <input
+                        {...register(`passengers.${index}.date_of_birth`)}
+                        type="date"
+                        dir="ltr"
+                        className={cn(inputClass, 'font-mono', errors.passengers?.[index]?.date_of_birth && errorInputClass)}
+                      />
+                      {errors.passengers?.[index]?.date_of_birth && (
+                        <p className="text-xs font-bold text-destructive mt-1">{errors.passengers[index].date_of_birth.message}</p>
+                      )}
+                    </div>
+
+                    {/* ID / Passport Number */}
+                    <div className="space-y-1.5 md:space-y-2">
+                      <label className={labelClass}>
+                        <IdCard className="h-3.5 w-3.5 md:h-4 md:w-4" />
+                        {isAr ? 'رقم الجواز أو البطاقة' : 'Passport / ID Number'}
+                        <span className="text-destructive">*</span>
+                      </label>
+                      <input
+                        {...register(`passengers.${index}.id_number`)}
+                        dir="ltr"
+                        className={cn(inputClass, 'font-mono font-medium', errors.passengers?.[index]?.id_number && errorInputClass)}
+                        placeholder={isAr ? 'رقم الجواز أو الهوية' : 'Passport or ID number'}
+                      />
+                      {errors.passengers?.[index]?.id_number && (
+                        <p className="text-xs font-bold text-destructive mt-1">{errors.passengers[index].id_number.message}</p>
+                      )}
+                    </div>
+
+                    {/* ID Expiry Date */}
+                    <div className="space-y-1.5 md:space-y-2">
+                      <label className={labelClass}>
+                        <Calendar className="h-3.5 w-3.5 md:h-4 md:w-4" />
+                        {isAr ? 'تاريخ انتهاء الإثبات' : 'ID Expiry Date'}
+                        <span className="text-destructive">*</span>
+                      </label>
+                      <input
+                        {...register(`passengers.${index}.id_expiry_date`)}
+                        type="date"
+                        dir="ltr"
+                        className={cn(inputClass, 'font-mono', errors.passengers?.[index]?.id_expiry_date && errorInputClass)}
+                      />
+                      {errors.passengers?.[index]?.id_expiry_date && (
+                        <p className="text-xs font-bold text-destructive mt-1">{errors.passengers[index].id_expiry_date.message}</p>
+                      )}
+                    </div>
+
+                    {/* Phone */}
+                    <div className="space-y-1.5 md:space-y-2">
+                      <label className={labelClass}>
+                        <Phone className="h-3.5 w-3.5 md:h-4 md:w-4" />
+                        {isAr ? 'رقم الجوال' : 'Phone Number'}
+                        <span className="text-destructive">*</span>
+                      </label>
+                      <input
+                        {...register(`passengers.${index}.phone`)}
+                        type="tel"
+                        dir="ltr"
+                        className={cn(inputClass, 'font-mono font-medium', errors.passengers?.[index]?.phone && errorInputClass)}
+                        placeholder="+966 50 000 0000"
+                      />
+                      {errors.passengers?.[index]?.phone && (
+                        <p className="text-xs font-bold text-destructive mt-1">{errors.passengers[index].phone.message}</p>
+                      )}
+                    </div>
+
+                    {/* Email */}
+                    <div className="space-y-1.5 md:space-y-2 md:col-span-2">
+                      <label className={labelClass}>
+                        <Mail className="h-3.5 w-3.5 md:h-4 md:w-4" />
+                        {isAr ? 'البريد الإلكتروني' : 'Email'}
+                        <span className="text-destructive">*</span>
+                      </label>
+                      <input
+                        {...register(`passengers.${index}.email`)}
+                        type="email"
+                        dir="ltr"
+                        className={cn(inputClass, errors.passengers?.[index]?.email && errorInputClass)}
+                        placeholder="user@example.com"
+                      />
+                      {errors.passengers?.[index]?.email && (
+                        <p className="text-xs font-bold text-destructive mt-1">{errors.passengers[index].email.message}</p>
+                      )}
+                    </div>
+                </div>
               </div>
-
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-5 md:gap-8">
-                  {/* Name */}
-                  <div className="space-y-1.5 md:space-y-2 md:col-span-2">
-                    <label className="flex items-center gap-1.5 md:gap-2 text-[10px] md:text-xs font-bold text-slate-500 uppercase tracking-widest">
-                      <User className="h-3.5 w-3.5 md:h-4 md:w-4" />
-                      {t('booking.passenger_name')}
-                      <span className="text-destructive">*</span>
-                    </label>
-                    <input
-                      {...register('passenger_name')}
-                      className={cn(
-                        'w-full h-12 md:h-14 px-4 md:px-5 rounded-xl md:rounded-2xl bg-slate-50 border-none text-slate-900 text-base md:text-lg font-semibold focus:ring-2 focus:ring-primary focus:outline-none transition-colors hover:bg-slate-100',
-                        errors.passenger_name && 'ring-2 ring-destructive bg-destructive/5'
-                      )}
-                      placeholder={isAr ? "الاسم الكامل كما في الهوية" : "Full name as on ID"}
-                    />
-                    {errors.passenger_name && (
-                      <p className="text-xs md:text-sm font-bold text-destructive mt-1.5 flex items-center gap-1"><ShieldCheck className="h-3.5 w-3.5 md:h-4 md:w-4" /> {t('common.required')}</p>
-                    )}
-                  </div>
-
-                  {/* Phone */}
-                  <div className="space-y-1.5 md:space-y-2">
-                    <label className="flex items-center gap-1.5 md:gap-2 text-[10px] md:text-xs font-bold text-slate-500 uppercase tracking-widest">
-                      <Phone className="h-3.5 w-3.5 md:h-4 md:w-4" />
-                      {t('booking.passenger_phone')}
-                      <span className="text-destructive">*</span>
-                    </label>
-                    <input
-                      {...register('passenger_phone')}
-                      type="tel"
-                      dir="ltr"
-                      className={cn(
-                        'w-full h-12 md:h-14 px-4 md:px-5 rounded-xl md:rounded-2xl bg-slate-50 border-none text-slate-900 text-base md:text-lg font-mono font-medium focus:ring-2 focus:ring-primary focus:outline-none transition-colors hover:bg-slate-100',
-                        errors.passenger_phone && 'ring-2 ring-destructive bg-destructive/5'
-                      )}
-                      placeholder="+966 50 000 0000"
-                    />
-                    {errors.passenger_phone && (
-                      <p className="text-xs md:text-sm font-bold text-destructive mt-1.5 flex items-center gap-1"><ShieldCheck className="h-3.5 w-3.5 md:h-4 md:w-4" /> {t('common.required')}</p>
-                    )}
-                  </div>
-
-                  {/* Email */}
-                  <div className="space-y-1.5 md:space-y-2">
-                    <label className="flex items-center gap-1.5 md:gap-2 text-[10px] md:text-xs font-bold text-slate-500 uppercase tracking-widest">
-                      <Mail className="h-3.5 w-3.5 md:h-4 md:w-4" />
-                      {t('booking.passenger_email')}
-                      <span className="text-destructive">*</span>
-                    </label>
-                    <input
-                      {...register('passenger_email')}
-                      type="email"
-                      dir="ltr"
-                      className={cn(
-                        'w-full h-12 md:h-14 px-4 md:px-5 rounded-xl md:rounded-2xl bg-slate-50 border-none text-slate-900 text-base md:text-lg font-semibold focus:ring-2 focus:ring-primary focus:outline-none transition-colors hover:bg-slate-100',
-                        errors.passenger_email && 'ring-2 ring-destructive bg-destructive/5'
-                      )}
-                      placeholder="user@example.com"
-                    />
-                    {errors.passenger_email && (
-                      <p className="text-xs md:text-sm font-bold text-destructive mt-1.5 flex items-center gap-1"><ShieldCheck className="h-3.5 w-3.5 md:h-4 md:w-4" /> {t('common.required')}</p>
-                    )}
-                  </div>
-
-                  {/* ID Number (optional) */}
-                  <div className="space-y-1.5 md:space-y-2 md:col-span-2">
-                    <label className="flex items-center gap-1.5 md:gap-2 text-[10px] md:text-xs font-bold text-slate-500 uppercase tracking-widest">
-                      <IdCard className="h-3.5 w-3.5 md:h-4 md:w-4" />
-                      {t('booking.passenger_id')}
-                      <span className="text-slate-400 normal-case tracking-normal">({t('common.optional')})</span>
-                    </label>
-                    <input
-                      {...register('passenger_id_number')}
-                      dir="ltr"
-                      className="w-full h-12 md:h-14 px-4 md:px-5 rounded-xl md:rounded-2xl bg-slate-50 border-none text-slate-900 text-base md:text-lg font-mono font-medium focus:ring-2 focus:ring-primary focus:outline-none transition-colors hover:bg-slate-100"
-                      placeholder="10xxxxxxxxx"
-                    />
-                  </div>
-              </div>
-            </div>
+            ))}
           </form>
         </div>
 
@@ -309,7 +398,7 @@ function BookTripContent({ params }: { params: Promise<{ id: string, locale: str
           <div className="sticky top-28 rounded-[2.5rem] bg-slate-900 p-8 shadow-2xl shadow-slate-900/20 text-white border border-slate-800 relative overflow-hidden">
              {/* Decorative Background */}
             <div className="absolute top-0 right-0 w-64 h-64 bg-accent/10 rounded-full blur-3xl -mr-32 -mt-32 pointer-events-none" />
-            
+
             <div className="relative z-10">
                 <h3 className="text-sm font-bold text-slate-400 uppercase tracking-widest mb-8">{t('booking.price_summary')}</h3>
 
@@ -348,7 +437,7 @@ function BookTripContent({ params }: { params: Promise<{ id: string, locale: str
                         <span>{t('trips.price_per_seat')}</span>
                         <span className="font-mono bg-white/10 px-2 py-1 rounded">{fmt(trip.price_per_seat)}</span>
                     </div>
-                    
+
                     <div className="border-t border-white/10 pt-6 mt-6">
                         <div className="flex items-end justify-between">
                             <span className="text-base font-bold text-slate-300">{t('booking.total_amount')}</span>
@@ -367,7 +456,7 @@ function BookTripContent({ params }: { params: Promise<{ id: string, locale: str
                 {submitting ? (
                     <Loader2 className="h-6 w-6 animate-spin" />
                 ) : (
-                    <CreditCard className="h-6 w-6" />
+                    <CheckCircle className="h-6 w-6" />
                 )}
                 {submitting ? t('common.loading') : t('booking.proceed_to_payment')}
                 <ArrowRight className="h-5 w-5 rtl:rotate-180 group-hover:translate-x-1 rtl:group-hover:-translate-x-1 transition-transform opacity-50" />
@@ -381,8 +470,8 @@ function BookTripContent({ params }: { params: Promise<{ id: string, locale: str
         </div>
       </div>
     </div>
-    
-    {/* Mobile Sticky Bottom Bar (Moved outside animating wrapper) */}
+
+    {/* Mobile Sticky Bottom Bar */}
     <div className="lg:hidden fixed bottom-0 left-0 right-0 bg-slate-900 border-t border-slate-800 p-4 pb-safe z-50 shadow-[0_-8px_30px_rgba(0,0,0,0.4)]">
         <div className="max-w-7xl mx-auto flex items-center justify-between gap-4">
             <div className="flex flex-col">
@@ -407,7 +496,7 @@ function BookTripContent({ params }: { params: Promise<{ id: string, locale: str
                 </div>
                 <span className="text-xl font-black text-primary leading-none">{fmt(totalPrice)}</span>
             </div>
-            
+
             <button
             type="submit"
             form="booking-form"
@@ -417,7 +506,7 @@ function BookTripContent({ params }: { params: Promise<{ id: string, locale: str
                 {submitting ? (
                 <Loader2 className="h-4 w-4 animate-spin" />
             ) : (
-                <CreditCard className="h-4 w-4" />
+                <CheckCircle className="h-4 w-4" />
             )}
             {submitting ? t('common.loading') : t('booking.proceed_to_payment')}
             </button>

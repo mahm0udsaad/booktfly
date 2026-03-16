@@ -22,7 +22,7 @@ export function TripCard({ trip, className }: TripCardProps) {
   const destCity = isAr ? trip.destination_city_ar : (trip.destination_city_en || trip.destination_city_ar)
   const tripType = TRIP_TYPES[trip.trip_type]
   const cabinClass = CABIN_CLASSES[trip.cabin_class]
-  const formattedPrice = isAr ? formatPrice(trip.price_per_seat) : formatPriceEN(trip.price_per_seat)
+  const formattedPrice = isAr ? formatPrice(trip.price_per_seat, trip.currency) : formatPriceEN(trip.price_per_seat, trip.currency)
 
   const Arrow = isAr ? ArrowLeft : ArrowRight
 

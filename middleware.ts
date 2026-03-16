@@ -19,12 +19,7 @@ const AUTH_REQUIRED_PATTERNS = [
   '/my-bookings',
   '/become-provider/apply',
   '/become-provider/status',
-  '/checkout',
 ]
-
-function isBookingRoute(pathname: string): boolean {
-  return /^\/trips\/[^/]+\/book$/.test(pathname)
-}
 
 export async function middleware(request: NextRequest) {
   // Strip locale prefix to get the path
@@ -42,8 +37,7 @@ export async function middleware(request: NextRequest) {
 
   // Check if auth is required
   const requiresAuth =
-    AUTH_REQUIRED_PATTERNS.some((p) => pathWithoutLocale.startsWith(p)) ||
-    isBookingRoute(pathWithoutLocale)
+    AUTH_REQUIRED_PATTERNS.some((p) => pathWithoutLocale.startsWith(p))
 
   if (requiresAuth && !user) {
     const locale = localeMatch ? localeMatch[1] : 'ar'

@@ -4,6 +4,8 @@ import { supabaseAdmin } from '@/lib/supabase/admin'
 import { bookingSchema } from '@/lib/validations'
 import { DEFAULT_COMMISSION_RATE } from '@/lib/constants'
 import { rateLimit } from '@/lib/rate-limit'
+import { notify } from '@/lib/notifications'
+import { shortId } from '@/lib/utils'
 
 export async function POST(request: NextRequest) {
   try {
@@ -12,17 +14,10 @@ export async function POST(request: NextRequest) {
 
     const supabase = await createClient()
 
-    // Check auth
+    // Auth is optional - guests can book
     const {
       data: { user },
     } = await supabase.auth.getUser()
-
-    if (!user) {
-      return NextResponse.json(
-        { error: 'Unauthorized' },
-        { status: 401 }
-      )
-    }
 
     const body = await request.json()
     const parsed = bookingSchema.safeParse(body)
@@ -34,7 +29,11 @@ export async function POST(request: NextRequest) {
       )
     }
 
-    const { trip_id, passenger_name, passenger_phone, passenger_email, passenger_id_number, seats_count } = parsed.data
+    const { trip_id, seats_count, passengers } = parsed.data
+    const firstPassenger = passengers[0]
+    const passenger_name = `${firstPassenger.first_name} ${firstPassenger.last_name}`
+    const passenger_phone = firstPassenger.phone
+    const passenger_email = firstPassenger.email
 
     // Fetch trip details
     const { data: trip, error: tripError } = await supabase
@@ -105,21 +104,24 @@ export async function POST(request: NextRequest) {
       .from('bookings')
       .insert({
         trip_id,
-        buyer_id: user.id,
+        buyer_id: user?.id || null,
         provider_id: trip.provider_id,
         passenger_name,
         passenger_phone,
         passenger_email,
-        passenger_id_number: passenger_id_number || null,
+        passenger_id_number: firstPassenger.id_number || null,
+        passengers: passengers || null,
         seats_count,
         price_per_seat: trip.price_per_seat,
         total_amount: totalAmount,
         commission_rate: commissionRate,
         commission_amount: commissionAmount,
         provider_payout: providerPayout,
-        status: 'payment_processing',
+        status: 'confirmed',
+        paid_at: new Date().toISOString(),
+        moyasar_payment_id: `dummy_${Date.now()}`,
       })
-      .select()
+      .select('*, trip:trips(*), provider:providers(*)')
       .single()
 
     if (bookingError || !booking) {
@@ -127,6 +129,37 @@ export async function POST(request: NextRequest) {
         { error: 'Failed to create booking' },
         { status: 500 }
       )
+    }
+
+    // Send notifications
+    const ref = shortId(booking.id)
+    const tripOrigin = trip.origin_city_ar || ''
+    const tripDest = trip.destination_city_ar || ''
+    const tripOriginEn = trip.origin_city_en || tripOrigin
+    const tripDestEn = trip.destination_city_en || tripDest
+
+    if (user?.id) {
+      await notify({
+        userId: user.id,
+        type: 'booking_confirmed',
+        titleAr: 'تم تأكيد حجزك بنجاح',
+        titleEn: 'Your booking has been confirmed',
+        bodyAr: `تم تأكيد حجزك رقم ${ref} للرحلة من ${tripOrigin} إلى ${tripDest}`,
+        bodyEn: `Your booking #${ref} for the trip from ${tripOriginEn} to ${tripDestEn} has been confirmed.`,
+        data: { booking_id: booking.id },
+      })
+    }
+
+    if (trip.provider?.user_id) {
+      await notify({
+        userId: trip.provider.user_id,
+        type: 'new_booking',
+        titleAr: 'لديك حجز جديد',
+        titleEn: 'You have a new booking',
+        bodyAr: `تم استلام حجز جديد رقم ${ref} للرحلة من ${tripOrigin} إلى ${tripDest} - ${seats_count} مقاعد`,
+        bodyEn: `New booking #${ref} received for the trip from ${tripOriginEn} to ${tripDestEn} - ${seats_count} seat(s).`,
+        data: { booking_id: booking.id },
+      })
     }
 
     return NextResponse.json({ bookingId: booking.id }, { status: 201 })
