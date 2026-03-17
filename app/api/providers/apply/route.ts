@@ -1,4 +1,4 @@
-import { NextResponse, type NextRequest } from 'next/server'
+import { after, NextResponse, type NextRequest } from 'next/server'
 import { createClient } from '@/lib/supabase/server'
 import { supabaseAdmin } from '@/lib/supabase/admin'
 import { providerApplicationSchema } from '@/lib/validations'
@@ -108,14 +108,20 @@ export async function POST(request: NextRequest) {
       )
     }
 
-    // Notify admin
-    await notifyAdmin({
-      type: 'new_application',
-      titleAr: 'طلب انضمام جديد',
-      titleEn: 'New Provider Application',
-      bodyAr: `تم تقديم طلب انضمام جديد من ${parsed.data.company_name_ar}`,
-      bodyEn: `New application received from ${parsed.data.company_name_en || parsed.data.company_name_ar}`,
-      data: { application_id: application.id },
+    // Keep notification work off the critical path for the submit response.
+    after(async () => {
+      try {
+        await notifyAdmin({
+          type: 'new_application',
+          titleAr: 'طلب انضمام جديد',
+          titleEn: 'New Provider Application',
+          bodyAr: `تم تقديم طلب انضمام جديد من ${parsed.data.company_name_ar}`,
+          bodyEn: `New application received from ${parsed.data.company_name_en || parsed.data.company_name_ar}`,
+          data: { application_id: application.id },
+        })
+      } catch (notifyError) {
+        console.error('Failed to notify admin for provider application:', notifyError)
+      }
     })
 
     return NextResponse.json({ data: application, error: null })

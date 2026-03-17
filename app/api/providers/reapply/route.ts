@@ -1,4 +1,4 @@
-import { NextResponse, type NextRequest } from 'next/server'
+import { after, NextResponse, type NextRequest } from 'next/server'
 import { createClient } from '@/lib/supabase/server'
 import { supabaseAdmin } from '@/lib/supabase/admin'
 import { providerApplicationSchema } from '@/lib/validations'
@@ -109,14 +109,20 @@ export async function POST(request: NextRequest) {
       )
     }
 
-    // Notify admin
-    await notifyAdmin({
-      type: 'provider_reapplied',
-      titleAr: 'إعادة تقديم طلب انضمام',
-      titleEn: 'Provider Reapplication',
-      bodyAr: `قام ${parsed.data.company_name_ar} بإعادة تقديم طلب الانضمام`,
-      bodyEn: `${parsed.data.company_name_en || parsed.data.company_name_ar} has reapplied`,
-      data: { application_id: application.id },
+    // Keep notification work off the critical path for the submit response.
+    after(async () => {
+      try {
+        await notifyAdmin({
+          type: 'provider_reapplied',
+          titleAr: 'إعادة تقديم طلب انضمام',
+          titleEn: 'Provider Reapplication',
+          bodyAr: `قام ${parsed.data.company_name_ar} بإعادة تقديم طلب الانضمام`,
+          bodyEn: `${parsed.data.company_name_en || parsed.data.company_name_ar} has reapplied`,
+          data: { application_id: application.id },
+        })
+      } catch (notifyError) {
+        console.error('Failed to notify admin for provider reapplication:', notifyError)
+      }
     })
 
     return NextResponse.json({ data: application, error: null })

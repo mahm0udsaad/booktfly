@@ -56,6 +56,27 @@ const ALL_DOC_FIELDS = [
   'doc_iata_permit',
 ] as const
 
+const MAX_DOC_SIZE_BYTES = 5 * 1024 * 1024
+const ALLOWED_DOC_TYPES = new Set([
+  'application/pdf',
+  'image/jpeg',
+  'image/png',
+])
+const CLIENT_TIMEOUT_MS = 30_000
+
+function withTimeout<T>(
+  promise: Promise<T>,
+  ms: number,
+  message: string
+): Promise<T> {
+  return Promise.race([
+    promise,
+    new Promise<T>((_, reject) => {
+      setTimeout(() => reject(new Error(message)), ms)
+    }),
+  ])
+}
+
 export default function ApplyProviderPage() {
   const t = useTranslations('become_provider')
   const tc = useTranslations('common')
@@ -75,7 +96,13 @@ export default function ApplyProviderPage() {
   useEffect(() => {
     async function checkExistingApplication() {
       try {
-        const res = await fetch('/api/providers/my-application')
+        const res = await withTimeout(
+          fetch('/api/providers/my-application', { cache: 'no-store' }),
+          CLIENT_TIMEOUT_MS,
+          locale === 'ar'
+            ? 'استغرق التحقق من الطلب الحالي وقتا أطول من المتوقع'
+            : 'Checking your existing application took too long'
+        )
         if (!res.ok) {
           setPageLoading(false)
           return
@@ -118,6 +145,33 @@ export default function ApplyProviderPage() {
   const selectedType = watch('provider_type')
 
   function handleDocChange(field: string, file: File | null) {
+    if (!file) {
+      setDocuments((prev) => ({ ...prev, [field]: null }))
+      return
+    }
+
+    if (!ALLOWED_DOC_TYPES.has(file.type)) {
+      toast({
+        title: locale === 'ar' ? 'نوع الملف غير مدعوم' : 'Unsupported file type',
+        description: locale === 'ar'
+          ? 'الملفات المسموحة: PDF و JPG و PNG.'
+          : 'Allowed files: PDF, JPG, and PNG.',
+        variant: 'destructive',
+      })
+      return
+    }
+
+    if (file.size > MAX_DOC_SIZE_BYTES) {
+      toast({
+        title: locale === 'ar' ? 'حجم الملف كبير جدا' : 'File is too large',
+        description: locale === 'ar'
+          ? 'الحد الأقصى 5 ميجابايت لكل ملف.'
+          : 'Maximum file size is 5 MB per document.',
+        variant: 'destructive',
+      })
+      return
+    }
+
     setDocuments((prev) => ({ ...prev, [field]: file }))
   }
 
@@ -142,41 +196,70 @@ export default function ApplyProviderPage() {
 
       // Upload documents directly to Supabase Storage (avoids Vercel payload limit)
       const supabase = createClient()
-      const { data: { user } } = await supabase.auth.getUser()
+      const {
+        data: { user },
+      } = await withTimeout(
+        supabase.auth.getUser(),
+        CLIENT_TIMEOUT_MS,
+        locale === 'ar'
+          ? 'تعذر التحقق من جلسة تسجيل الدخول'
+          : 'Could not verify your session'
+      )
       if (!user) {
         toast({ title: locale === 'ar' ? 'يرجى تسجيل الدخول' : 'Please sign in', variant: 'destructive' })
         return
       }
 
-      const docUrls: Record<string, string> = {}
-      for (const [field, file] of Object.entries(documents)) {
-        if (file) {
+      const uploadResults = await Promise.all(
+        Object.entries(documents).map(async ([field, file]) => {
+          if (!file) return null
+
           const ext = file.name.split('.').pop() || 'pdf'
           const filePath = `${user.id}/applications/${field}_${Date.now()}.${ext}`
-          const { error: uploadError } = await supabase.storage
-            .from('provider-documents')
-            .upload(filePath, file, { contentType: file.type, upsert: true })
+          const { error: uploadError } = await withTimeout(
+            supabase.storage
+              .from('provider-documents')
+              .upload(filePath, file, { contentType: file.type, upsert: true }),
+            CLIENT_TIMEOUT_MS,
+            locale === 'ar'
+              ? `انتهت مهلة رفع ${t(field as any)}`
+              : `Uploading ${t(field as any)} timed out`
+          )
+
           if (uploadError) {
-            toast({
-              title: locale === 'ar' ? `فشل رفع ${t(field as any)}` : `Failed to upload ${field}`,
-              variant: 'destructive',
-            })
-            return
+            throw new Error(
+              locale === 'ar'
+                ? `فشل رفع ${t(field as any)}`
+                : `Failed to upload ${t(field as any)}`
+            )
           }
+
           const { data: urlData } = supabase.storage
             .from('provider-documents')
             .getPublicUrl(filePath)
-          docUrls[`${field}_url`] = urlData.publicUrl
-        }
-      }
+
+          return [`${field}_url`, urlData.publicUrl] as const
+        })
+      )
+
+      const docUrls = uploadResults.reduce<Record<string, string>>((acc, entry) => {
+        if (!entry) return acc
+
+        acc[entry[0]] = entry[1]
+        return acc
+      }, {})
 
       // Send only text data + doc URLs (no files) to the API
       const endpoint = isReapply ? '/api/providers/reapply' : '/api/providers/apply'
+      const controller = new AbortController()
+      const timeoutId = setTimeout(() => controller.abort(), CLIENT_TIMEOUT_MS)
       const res = await fetch(endpoint, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
+        cache: 'no-store',
+        signal: controller.signal,
         body: JSON.stringify({ ...data, ...docUrls }),
-      })
+      }).finally(() => clearTimeout(timeoutId))
 
       const result = await res.json()
 
@@ -193,8 +276,13 @@ export default function ApplyProviderPage() {
         variant: 'success',
       })
       router.push(`/${locale}/become-provider/status`)
-    } catch {
-      toast({ title: tc('error'), variant: 'destructive' })
+    } catch (error) {
+      const message =
+        error instanceof Error && error.message
+          ? error.message
+          : tc('error')
+
+      toast({ title: message, variant: 'destructive' })
     } finally {
       setSubmitting(false)
     }
