@@ -197,18 +197,14 @@ export default function ApplyProviderPage() {
       // Upload documents directly to Supabase Storage (avoids Vercel payload limit)
       const supabase = createClient()
       const {
-        data: { user },
-      } = await withTimeout(
-        supabase.auth.getUser(),
-        CLIENT_TIMEOUT_MS,
-        locale === 'ar'
-          ? 'تعذر التحقق من جلسة تسجيل الدخول'
-          : 'Could not verify your session'
-      )
-      if (!user) {
+        data: { session },
+      } = await supabase.auth.getSession()
+      if (!session?.user) {
         toast({ title: locale === 'ar' ? 'يرجى تسجيل الدخول' : 'Please sign in', variant: 'destructive' })
+        router.push(`/${locale}/auth/login?redirect=/become-provider/apply`)
         return
       }
+      const user = session.user
 
       const uploadResults = await Promise.all(
         Object.entries(documents).map(async ([field, file]) => {
