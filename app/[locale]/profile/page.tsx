@@ -1,6 +1,6 @@
 'use client'
 
-import { useState } from 'react'
+import { useEffect, useState } from 'react'
 import { useLocale, useTranslations } from 'next-intl'
 import { useRouter } from 'next/navigation'
 import { User, Mail, Phone, Calendar, Lock, Check, LayoutDashboard, BadgeCheck, ShieldCheck } from 'lucide-react'
@@ -22,11 +22,19 @@ export default function ProfilePage() {
   const [error, setError] = useState('')
   const [initialized, setInitialized] = useState(false)
 
-  if (!initialized && profile) {
+  useEffect(() => {
+    if (!profile || initialized) return
+
     setFullName(profile.full_name || '')
     setPhone(profile.phone || '')
     setInitialized(true)
-  }
+  }, [initialized, profile])
+
+  useEffect(() => {
+    if (!loading && (!user || !profile)) {
+      router.replace(`/${locale}/auth/login`)
+    }
+  }, [loading, user, profile, router, locale])
 
   if (loading) {
     return (
@@ -48,7 +56,6 @@ export default function ProfilePage() {
   }
 
   if (!user || !profile) {
-    router.push(`/${locale}/auth/login`)
     return null
   }
 

@@ -18,7 +18,7 @@ import {
 import { useState } from 'react'
 import { cn } from '@/lib/utils'
 import { createClient } from '@/lib/supabase/client'
-import { useRouter } from 'next/navigation'
+import { signOutAndRedirect } from '@/lib/auth-client'
 
 const NAV_ITEMS = [
   { key: 'dashboard', icon: LayoutDashboard, href: '/admin' },
@@ -34,7 +34,6 @@ export function AdminSidebar() {
   const t = useTranslations('admin')
   const locale = useLocale()
   const pathname = usePathname()
-  const router = useRouter()
   const supabase = createClient()
   const [mobileOpen, setMobileOpen] = useState(false)
 
@@ -45,9 +44,7 @@ export function AdminSidebar() {
   }
 
   const handleSignOut = async () => {
-    await supabase.auth.signOut()
-    router.push(`/${locale}`)
-    router.refresh()
+    await signOutAndRedirect(supabase, locale)
   }
 
   const sidebarContent = (

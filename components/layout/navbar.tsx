@@ -10,7 +10,7 @@ import { useUser } from '@/hooks/use-user'
 import { LanguageSwitcher } from './language-switcher'
 import { NotificationBell } from './notification-bell'
 import { createClient } from '@/lib/supabase/client'
-import { useRouter } from 'next/navigation'
+import { signOutAndRedirect } from '@/lib/auth-client'
 import { cn } from '@/lib/utils'
 
 export function Navbar() {
@@ -20,7 +20,6 @@ export function Navbar() {
   const [mobileOpen, setMobileOpen] = useState(false)
   const [userMenuOpen, setUserMenuOpen] = useState(false)
   const [scrolled, setScrolled] = useState(false)
-  const router = useRouter()
   const supabase = createClient()
 
   useEffect(() => {
@@ -32,9 +31,7 @@ export function Navbar() {
   }, [])
 
   const handleSignOut = async () => {
-    await supabase.auth.signOut()
-    router.push(`/${locale}`)
-    router.refresh()
+    await signOutAndRedirect(supabase, locale)
   }
 
   const getDashboardLink = () => {
@@ -90,7 +87,16 @@ export function Navbar() {
                <LanguageSwitcher />
             </div>
 
-            {!loading && (
+            {loading ? (
+              <div className="flex items-center gap-2 sm:gap-4">
+                <div className="hidden sm:block h-10 w-10 rounded-lg bg-slate-200/80 animate-pulse" />
+                <div className="flex items-center gap-2 rounded-2xl bg-white border border-slate-200 p-1.5 pe-4 shadow-sm">
+                  <div className="h-9 w-9 rounded-xl bg-slate-200 animate-pulse" />
+                  <div className="hidden lg:block h-4 w-24 rounded bg-slate-200 animate-pulse" />
+                  <div className="h-4 w-4 rounded bg-slate-200 animate-pulse" />
+                </div>
+              </div>
+            ) : (
               <div className="flex items-center gap-2 sm:gap-4">
                 {user ? (
                   <>

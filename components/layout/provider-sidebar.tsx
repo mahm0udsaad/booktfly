@@ -16,7 +16,7 @@ import {
 import { useState } from 'react'
 import { cn } from '@/lib/utils'
 import { createClient } from '@/lib/supabase/client'
-import { useRouter } from 'next/navigation'
+import { signOutAndRedirect } from '@/lib/auth-client'
 
 const NAV_ITEMS = [
   { key: 'dashboard', icon: LayoutDashboard, href: '/provider/dashboard' },
@@ -30,7 +30,6 @@ export function ProviderSidebar() {
   const t = useTranslations('provider')
   const locale = useLocale()
   const pathname = usePathname()
-  const router = useRouter()
   const supabase = createClient()
   const [mobileOpen, setMobileOpen] = useState(false)
 
@@ -40,9 +39,7 @@ export function ProviderSidebar() {
   }
 
   const handleSignOut = async () => {
-    await supabase.auth.signOut()
-    router.push(`/${locale}`)
-    router.refresh()
+    await signOutAndRedirect(supabase, locale)
   }
 
   const sidebarContent = (

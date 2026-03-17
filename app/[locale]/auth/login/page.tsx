@@ -12,6 +12,7 @@ import { z } from 'zod'
 import { Mail, Lock, Loader2, Sparkles, Eye, EyeOff, CheckCircle2, ArrowRight } from 'lucide-react'
 import { motion, AnimatePresence } from 'framer-motion'
 import { createClient } from '@/lib/supabase/client'
+import { getPostLoginRedirect, navigateAfterLogin } from '@/lib/auth-client'
 import { getLoginSchema, getMagicLinkSchema } from '@/lib/validations'
 import { toast } from '@/components/ui/toaster'
 import { cn } from '@/lib/utils'
@@ -52,7 +53,7 @@ function LoginContent() {
     setIsLoading(true)
     try {
       const supabase = createClient()
-      const { error } = await supabase.auth.signInWithPassword({
+      const { data: authData, error } = await supabase.auth.signInWithPassword({
         email: data.email,
         password: data.password,
       })
@@ -62,27 +63,24 @@ function LoginContent() {
         return
       }
 
-      const { data: userData } = await supabase.auth.getUser()
-      if (!userData.user) return
+      const signedInUser = authData.user
+
+      if (!signedInUser) {
+        navigateAfterLogin(router, { locale, redirectTo })
+        return
+      }
 
       const { data: profile } = await supabase
         .from('profiles')
         .select('role')
-        .eq('id', userData.user.id)
-        .single()
+        .eq('id', signedInUser.id)
+        .maybeSingle()
 
-      if (redirectTo) {
-        router.push(redirectTo)
-      } else {
-        const role = profile?.role || 'buyer'
-        if (role === 'admin') {
-          router.push(`/${locale}/admin`)
-        } else if (role === 'provider') {
-          router.push(`/${locale}/provider/dashboard`)
-        } else {
-          router.push(`/${locale}`)
-        }
-      }
+      navigateAfterLogin(router, {
+        locale,
+        redirectTo,
+        role: profile?.role,
+      })
     } catch {
       toast({ title: tCommon('error'), variant: 'destructive' })
     } finally {
