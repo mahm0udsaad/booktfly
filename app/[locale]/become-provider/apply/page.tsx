@@ -83,6 +83,7 @@ export default function ApplyProviderPage() {
   const locale = useLocale() as 'ar' | 'en'
   const router = useRouter()
   const [submitting, setSubmitting] = useState(false)
+  const [submitStatus, setSubmitStatus] = useState('')
   const [pageLoading, setPageLoading] = useState(true)
   const [isReapply, setIsReapply] = useState(false)
   const [documents, setDocuments] = useState<Record<string, File | null>>({
@@ -196,6 +197,7 @@ export default function ApplyProviderPage() {
 
       // Upload documents directly to Supabase Storage (avoids Vercel payload limit)
       const supabase = createClient()
+      setSubmitStatus(locale === 'ar' ? 'جاري التحقق من الجلسة...' : 'Verifying session...')
       const {
         data: { session },
       } = await supabase.auth.getSession()
@@ -205,6 +207,16 @@ export default function ApplyProviderPage() {
         return
       }
       const user = session.user
+
+      const filesToUpload = Object.entries(documents).filter(([, file]) => file !== null)
+      const totalFiles = filesToUpload.length
+      let uploadedCount = 0
+
+      setSubmitStatus(
+        locale === 'ar'
+          ? `جاري رفع المستندات (0/${totalFiles})...`
+          : `Uploading documents (0/${totalFiles})...`
+      )
 
       const uploadResults = await Promise.all(
         Object.entries(documents).map(async ([field, file]) => {
@@ -230,6 +242,13 @@ export default function ApplyProviderPage() {
             )
           }
 
+          uploadedCount++
+          setSubmitStatus(
+            locale === 'ar'
+              ? `جاري رفع المستندات (${uploadedCount}/${totalFiles})...`
+              : `Uploading documents (${uploadedCount}/${totalFiles})...`
+          )
+
           const { data: urlData } = supabase.storage
             .from('provider-documents')
             .getPublicUrl(filePath)
@@ -246,13 +265,13 @@ export default function ApplyProviderPage() {
       }, {})
 
       // Send only text data + doc URLs (no files) to the API
+      setSubmitStatus(locale === 'ar' ? 'جاري إرسال الطلب...' : 'Submitting application...')
       const endpoint = isReapply ? '/api/providers/reapply' : '/api/providers/apply'
       const controller = new AbortController()
       const timeoutId = setTimeout(() => controller.abort(), CLIENT_TIMEOUT_MS)
       const res = await fetch(endpoint, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        cache: 'no-store',
         signal: controller.signal,
         body: JSON.stringify({ ...data, ...docUrls }),
       }).finally(() => clearTimeout(timeoutId))
@@ -281,6 +300,7 @@ export default function ApplyProviderPage() {
       toast({ title: message, variant: 'destructive' })
     } finally {
       setSubmitting(false)
+      setSubmitStatus('')
     }
   }
 
@@ -620,7 +640,7 @@ export default function ApplyProviderPage() {
               {submitting ? (
                 <>
                   <Loader2 className="h-5 w-5 animate-spin" />
-                  {locale === 'ar' ? 'جاري معالجة الطلب...' : 'Processing Application...'}
+                  {submitStatus || (locale === 'ar' ? 'جاري معالجة الطلب...' : 'Processing Application...')}
                 </>
               ) : (
                 <>
