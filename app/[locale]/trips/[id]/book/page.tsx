@@ -26,7 +26,7 @@ import {
 } from 'lucide-react'
 import { cn, formatPrice, formatPriceEN } from '@/lib/utils'
 import { MAX_SEATS_PER_BOOKING } from '@/lib/constants'
-import { TRIP_TYPES, CABIN_CLASSES } from '@/lib/constants'
+import { TRIP_TYPES, CABIN_CLASSES, BOOKING_TYPES } from '@/lib/constants'
 import { DetailPageSkeleton } from '@/components/shared/loading-skeleton'
 import { getBookingSchema, passengerSchema } from '@/lib/validations'
 import { toast } from '@/components/ui/toaster'
@@ -58,6 +58,7 @@ function BookTripContent({ params }: { params: Promise<{ id: string, locale: str
   const [submitting, setSubmitting] = useState(false)
   const initialSeatsCount = parseInt(searchParams.get('seats') || '1', 10)
   const [seatsCount, setSeatsCount] = useState(initialSeatsCount)
+  const [bookingType, setBookingType] = useState<'round_trip' | 'one_way'>('round_trip')
 
   const Arrow = isAr ? ArrowLeft : ArrowRight
   const Back = isAr ? ChevronRight : ChevronLeft
@@ -128,7 +129,11 @@ function BookTripContent({ params }: { params: Promise<{ id: string, locale: str
 
   const remaining = trip.total_seats - trip.booked_seats
   const maxBookable = Math.min(remaining, MAX_SEATS_PER_BOOKING)
-  const totalPrice = trip.price_per_seat * seatsCount
+  const isRoundTrip = trip.trip_type === 'round_trip'
+  const effectivePrice = isRoundTrip && bookingType === 'one_way' && trip.price_per_seat_one_way
+    ? trip.price_per_seat_one_way
+    : trip.price_per_seat
+  const totalPrice = effectivePrice * seatsCount
   const fmt = (amount: number) => isAr ? formatPrice(amount, trip.currency) : formatPriceEN(amount, trip.currency)
 
   const originCity = isAr ? trip.origin_city_ar : (trip.origin_city_en || trip.origin_city_ar)
@@ -153,6 +158,7 @@ function BookTripContent({ params }: { params: Promise<{ id: string, locale: str
           passenger_email: firstPassenger.email,
           seats_count: seatsCount,
           passengers: data.passengers,
+          booking_type: isRoundTrip ? bookingType : 'one_way',
         }),
       })
 
@@ -167,7 +173,7 @@ function BookTripContent({ params }: { params: Promise<{ id: string, locale: str
         return
       }
 
-      router.push(`/${locale}/my-bookings/${result.bookingId}`)
+      router.push(`/${locale}/checkout/${result.bookingId}`)
     } catch {
       toast({
         title: t('common.error'),
@@ -247,6 +253,45 @@ function BookTripContent({ params }: { params: Promise<{ id: string, locale: str
                 </div>
              </div>
           </div>
+
+          {/* Booking Type Selector (for round-trip trips) */}
+          {isRoundTrip && (
+            <div className="rounded-[1.5rem] md:rounded-[2rem] border border-slate-200 bg-white p-5 md:p-6 shadow-sm">
+              <h3 className="text-base md:text-lg font-bold text-slate-900 mb-4">
+                {isAr ? 'نوع الحجز' : 'Booking Type'}
+              </h3>
+              <div className="grid grid-cols-2 gap-3">
+                <button
+                  type="button"
+                  onClick={() => setBookingType('round_trip')}
+                  className={cn(
+                    'flex flex-col items-center gap-2 p-4 rounded-xl border-2 transition-all text-center',
+                    bookingType === 'round_trip'
+                      ? 'border-primary bg-primary/5 text-primary'
+                      : 'border-slate-200 text-slate-600 hover:border-slate-300'
+                  )}
+                >
+                  <span className="text-sm font-bold">{isAr ? BOOKING_TYPES.round_trip.ar : BOOKING_TYPES.round_trip.en}</span>
+                  <span className="text-lg font-black">{fmt(trip.price_per_seat)}</span>
+                </button>
+                {trip.price_per_seat_one_way && trip.price_per_seat_one_way > 0 && (
+                  <button
+                    type="button"
+                    onClick={() => setBookingType('one_way')}
+                    className={cn(
+                      'flex flex-col items-center gap-2 p-4 rounded-xl border-2 transition-all text-center',
+                      bookingType === 'one_way'
+                        ? 'border-primary bg-primary/5 text-primary'
+                        : 'border-slate-200 text-slate-600 hover:border-slate-300'
+                    )}
+                  >
+                    <span className="text-sm font-bold">{isAr ? BOOKING_TYPES.one_way.ar : BOOKING_TYPES.one_way.en}</span>
+                    <span className="text-lg font-black">{fmt(trip.price_per_seat_one_way)}</span>
+                  </button>
+                )}
+              </div>
+            </div>
+          )}
 
           {/* Booking form */}
           <form onSubmit={handleSubmit(onSubmit)} className="space-y-6 md:space-y-8" id="booking-form">
@@ -435,7 +480,7 @@ function BookTripContent({ params }: { params: Promise<{ id: string, locale: str
                 <div className="space-y-4">
                     <div className="flex items-center justify-between text-sm font-medium text-slate-300">
                         <span>{t('trips.price_per_seat')}</span>
-                        <span className="font-mono bg-white/10 px-2 py-1 rounded">{fmt(trip.price_per_seat)}</span>
+                        <span className="font-mono bg-white/10 px-2 py-1 rounded">{fmt(effectivePrice)}</span>
                     </div>
 
                     <div className="border-t border-white/10 pt-6 mt-6">

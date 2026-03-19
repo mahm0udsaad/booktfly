@@ -55,7 +55,7 @@ const ALL_DOC_FIELDS = [
   'doc_iata_permit',
 ] as const
 
-const MAX_DOC_SIZE_BYTES = 5 * 1024 * 1024
+const MAX_DOC_SIZE_BYTES = 4 * 1024 * 1024
 const ALLOWED_DOC_TYPES = new Set([
   'application/pdf',
   'image/jpeg',
@@ -165,8 +165,8 @@ export default function ApplyProviderPage() {
       toast({
         title: locale === 'ar' ? 'حجم الملف كبير جدا' : 'File is too large',
         description: locale === 'ar'
-          ? 'الحد الأقصى 5 ميجابايت لكل ملف.'
-          : 'Maximum file size is 5 MB per document.',
+          ? 'الحد الأقصى 4 ميجابايت لكل ملف.'
+          : 'Maximum file size is 4 MB per document.',
         variant: 'destructive',
       })
       return
@@ -212,7 +212,7 @@ export default function ApplyProviderPage() {
           formData.append('field', field)
 
           const res = await withTimeout(
-            fetch('/api/providers/upload-doc', { method: 'POST', body: formData }),
+            fetch('/api/providers/upload-doc', { method: 'POST', body: formData, headers: { 'Accept-Language': locale } }),
             CLIENT_TIMEOUT_MS,
             locale === 'ar'
               ? `انتهت مهلة رفع ${t(field as any)}`
@@ -252,7 +252,7 @@ export default function ApplyProviderPage() {
       const timeoutId = setTimeout(() => controller.abort(), CLIENT_TIMEOUT_MS)
       const res = await fetch(endpoint, {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+        headers: { 'Content-Type': 'application/json', 'Accept-Language': locale },
         signal: controller.signal,
         body: JSON.stringify({ ...data, ...docUrls }),
       }).finally(() => clearTimeout(timeoutId))
@@ -509,8 +509,8 @@ export default function ApplyProviderPage() {
             </div>
             <p className="text-muted-foreground text-sm mb-6 ms-13">
               {locale === 'ar'
-                ? 'يرجى رفع نسخ واضحة من مستنداتك الرسمية بصيغة PDF أو JPG أو PNG. الحد الأقصى 5 ميجابايت لكل ملف.'
-                : 'Please upload clear, legible copies of your official documents in PDF, JPG, or PNG format. Max size 5MB per file.'}
+                ? 'يرجى رفع نسخ واضحة من مستنداتك الرسمية بصيغة PDF أو JPG أو PNG. الحد الأقصى 4 ميجابايت لكل ملف.'
+                : 'Please upload clear, legible copies of your official documents in PDF, JPG, or PNG format. Max size 4MB per file.'}
             </p>
 
             <div className="grid gap-4">

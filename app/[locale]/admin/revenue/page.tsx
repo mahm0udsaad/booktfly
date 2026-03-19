@@ -69,7 +69,7 @@ export default function AdminRevenue() {
   const cards = [
     { label: t('gross'), value: `${stats.gross.toLocaleString()} ${cur}`, icon: DollarSign, color: 'text-primary' },
     { label: t('commissions'), value: `${stats.commissions.toLocaleString()} ${cur}`, icon: TrendingUp, color: 'text-success' },
-    { label: t('payouts'), value: `${stats.payouts.toLocaleString()} ${cur}`, icon: Users, color: 'text-accent' },
+    { label: t('payouts'), value: `${stats.payouts.toLocaleString()} ${cur}`, icon: Users, color: 'text-amber-600' },
     { label: t('booking_count'), value: stats.bookingCount, icon: BookOpen, color: 'text-primary' },
     { label: t('avg_value'), value: `${stats.avgValue.toLocaleString()} ${cur}`, icon: DollarSign, color: 'text-warning' },
   ]

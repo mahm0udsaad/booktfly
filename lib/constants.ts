@@ -53,6 +53,13 @@ export const EDIT_REQUEST_STATUS_COLORS: Record<string, string> = {
   rejected: 'bg-destructive/10 text-destructive',
 }
 
+export const WITHDRAWAL_STATUS_COLORS: Record<string, string> = {
+  pending: 'bg-warning/10 text-warning',
+  approved: 'bg-success/10 text-success',
+  rejected: 'bg-destructive/10 text-destructive',
+  completed: 'bg-success/10 text-success',
+}
+
 export const BOOKING_TYPES = {
   one_way: { ar: 'ذهاب فقط', en: 'One Way' },
   round_trip: { ar: 'ذهاب وعودة', en: 'Round Trip' },

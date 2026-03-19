@@ -22,6 +22,9 @@ export type Passenger = {
 
 export type TripEditRequestStatus = 'pending' | 'approved' | 'rejected'
 
+export type WalletTransactionType = 'credit' | 'debit' | 'withdrawal'
+export type WithdrawalStatus = 'pending' | 'approved' | 'rejected' | 'completed'
+
 export type NotificationType =
   | 'application_approved'
   | 'application_rejected'
@@ -40,6 +43,11 @@ export type NotificationType =
   | 'cancellation_approved'
   | 'cancellation_rejected'
   | 'cancellation_requested'
+  | 'payment_approved'
+  | 'payment_rejected'
+  | 'withdrawal_requested'
+  | 'withdrawal_approved'
+  | 'withdrawal_rejected'
 
 export type Profile = {
   id: string
@@ -97,6 +105,7 @@ export type Provider = {
   has_tourism_permit: boolean
   has_civil_aviation: boolean
   has_iata_permit: boolean
+  iban: string | null
   created_at: string
   updated_at: string
 }
@@ -153,6 +162,11 @@ export type Booking = {
   provider_payout: number
   status: BookingStatus
   moyasar_payment_id: string | null
+  transfer_receipt_url: string | null
+  transfer_confirmed_at: string | null
+  payment_reviewed_by: string | null
+  payment_reviewed_at: string | null
+  payment_rejection_reason: string | null
   paid_at: string | null
   refunded_at: string | null
   refunded_by: string | null
@@ -193,10 +207,48 @@ export type TripEditRequest = {
   provider?: Provider
 }
 
+export type ProviderWallet = {
+  id: string
+  provider_id: string
+  balance: number
+  created_at: string
+  updated_at: string
+}
+
+export type WalletTransaction = {
+  id: string
+  provider_id: string
+  booking_id: string | null
+  type: WalletTransactionType
+  amount: number
+  balance_after: number
+  description_ar: string
+  description_en: string
+  created_at: string
+}
+
+export type WithdrawalRequest = {
+  id: string
+  provider_id: string
+  amount: number
+  provider_iban: string
+  status: WithdrawalStatus
+  admin_comment: string | null
+  created_at: string
+  reviewed_at: string | null
+  reviewed_by: string | null
+  provider?: Provider
+}
+
 export type PlatformSettings = {
   id: number
   default_commission_rate: number
   terms_content_ar: string | null
   terms_content_en: string | null
+  bank_name_ar: string | null
+  bank_name_en: string | null
+  bank_iban: string | null
+  bank_account_holder_ar: string | null
+  bank_account_holder_en: string | null
   updated_at: string
 }

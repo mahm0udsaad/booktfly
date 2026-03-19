@@ -11,12 +11,14 @@ import {
   User,
   Menu,
   X,
-  LogOut
+  LogOut,
+  ExternalLink,
 } from 'lucide-react'
 import { useState } from 'react'
 import { cn } from '@/lib/utils'
 import { createClient } from '@/lib/supabase/client'
 import { signOutAndRedirect } from '@/lib/auth-client'
+import { LanguageSwitcher } from '@/components/layout/language-switcher'
 
 const NAV_ITEMS = [
   { key: 'dashboard', icon: LayoutDashboard, href: '/provider/dashboard' },
@@ -46,7 +48,7 @@ export function ProviderSidebar() {
     <div className="flex flex-col h-full bg-white">
       <div className="p-6 border-b border-slate-100">
         <h2 className="font-black text-2xl text-slate-900 tracking-tight">{t('dashboard')}</h2>
-        <p className="text-xs font-bold text-accent uppercase tracking-widest mt-1">Provider Panel</p>
+        <p className="text-xs font-bold text-amber-600 uppercase tracking-widest mt-1">Provider Panel</p>
       </div>
       
       <div className="flex-1 overflow-y-auto py-6 px-4 space-y-2">
@@ -64,21 +66,32 @@ export function ProviderSidebar() {
                   : 'text-slate-500 hover:bg-slate-50 hover:text-slate-900'
               )}
             >
-              <item.icon className={cn("h-5 w-5", active ? "text-accent" : "text-slate-400 group-hover:text-slate-900")} />
+              <item.icon className={cn("h-5 w-5", active ? "text-amber-300" : "text-slate-400 group-hover:text-slate-900")} />
               {t(item.key)}
             </Link>
           )
         })}
       </div>
 
-      <div className="p-4 border-t border-slate-100">
-         <button
-            onClick={handleSignOut}
-            className="flex items-center gap-4 w-full px-4 py-3.5 rounded-2xl text-sm font-bold text-destructive hover:bg-destructive/10 transition-colors"
-          >
-            <LogOut className="h-5 w-5" />
-            {locale === 'ar' ? 'تسجيل الخروج' : 'Logout'}
-          </button>
+      <div className="p-4 border-t border-slate-100 space-y-3">
+        <Link
+          href={`/${locale}`}
+          onClick={() => setMobileOpen(false)}
+          className="flex items-center gap-4 w-full px-4 py-3.5 rounded-2xl text-sm font-bold text-slate-600 hover:bg-slate-50 hover:text-slate-900 transition-colors"
+        >
+          <ExternalLink className="h-5 w-5 text-slate-400" />
+          {locale === 'ar' ? 'الموقع الرئيسي' : 'Main website'}
+        </Link>
+        <div className="rounded-2xl border border-slate-200 bg-slate-50 p-1">
+          <LanguageSwitcher />
+        </div>
+        <button
+          onClick={handleSignOut}
+          className="flex items-center gap-4 w-full px-4 py-3.5 rounded-2xl text-sm font-bold text-destructive hover:bg-destructive/10 transition-colors"
+        >
+          <LogOut className="h-5 w-5" />
+          {locale === 'ar' ? 'تسجيل الخروج' : 'Logout'}
+        </button>
       </div>
     </div>
   )

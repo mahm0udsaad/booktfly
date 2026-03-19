@@ -30,6 +30,7 @@ export async function POST(request: NextRequest) {
     }
 
     const { trip_id, seats_count, passengers } = parsed.data
+    const booking_type = (body.booking_type === 'one_way' ? 'one_way' : 'round_trip') as 'one_way' | 'round_trip'
     const firstPassenger = passengers[0]
     const passenger_name = `${firstPassenger.first_name} ${firstPassenger.last_name}`
     const passenger_phone = firstPassenger.phone
@@ -95,7 +96,11 @@ export async function POST(request: NextRequest) {
       }
     }
 
-    const totalAmount = trip.price_per_seat * seats_count
+    // Use one-way price if booking type is one-way on a round-trip
+    const effectivePrice = (trip.trip_type === 'round_trip' && booking_type === 'one_way' && trip.price_per_seat_one_way)
+      ? trip.price_per_seat_one_way
+      : trip.price_per_seat
+    const totalAmount = effectivePrice * seats_count
     const commissionAmount = (totalAmount * commissionRate) / 100
     const providerPayout = totalAmount - commissionAmount
 
@@ -111,15 +116,14 @@ export async function POST(request: NextRequest) {
         passenger_email,
         passenger_id_number: firstPassenger.id_number || null,
         passengers: passengers || null,
+        booking_type,
         seats_count,
-        price_per_seat: trip.price_per_seat,
+        price_per_seat: effectivePrice,
         total_amount: totalAmount,
         commission_rate: commissionRate,
         commission_amount: commissionAmount,
         provider_payout: providerPayout,
-        status: 'confirmed',
-        paid_at: new Date().toISOString(),
-        moyasar_payment_id: `dummy_${Date.now()}`,
+        status: 'payment_processing',
       })
       .select('*, trip:trips(*), provider:providers(*)')
       .single()
@@ -141,11 +145,11 @@ export async function POST(request: NextRequest) {
     if (user?.id) {
       await notify({
         userId: user.id,
-        type: 'booking_confirmed',
-        titleAr: 'تم تأكيد حجزك بنجاح',
-        titleEn: 'Your booking has been confirmed',
-        bodyAr: `تم تأكيد حجزك رقم ${ref} للرحلة من ${tripOrigin} إلى ${tripDest}`,
-        bodyEn: `Your booking #${ref} for the trip from ${tripOriginEn} to ${tripDestEn} has been confirmed.`,
+        type: 'new_booking',
+        titleAr: 'تم إنشاء حجزك بنجاح',
+        titleEn: 'Your booking has been created',
+        bodyAr: `تم إنشاء حجزك رقم ${ref} للرحلة من ${tripOrigin} إلى ${tripDest}. يرجى إتمام الدفع.`,
+        bodyEn: `Your booking #${ref} for the trip from ${tripOriginEn} to ${tripDestEn} has been created. Please complete payment.`,
         data: { booking_id: booking.id },
       })
     }

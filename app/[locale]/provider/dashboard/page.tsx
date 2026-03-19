@@ -82,7 +82,7 @@ export default async function ProviderDashboardPage() {
 
   const statCards = [
     { label: t('active_trips'), value: stats.activeTrips, icon: Plane, color: 'text-primary', bg: 'bg-primary/10' },
-    { label: t('total_bookings'), value: stats.totalBookings, icon: BookOpen, color: 'text-accent', bg: 'bg-accent/10' },
+    { label: t('total_bookings'), value: stats.totalBookings, icon: BookOpen, color: 'text-amber-600', bg: 'bg-amber-500/10' },
     { label: t('monthly_revenue'), value: formatPrice(stats.monthlyRevenue), icon: DollarSign, color: 'text-emerald-500', bg: 'bg-emerald-500/10' },
     { label: t('seats_sold'), value: stats.seatsSold, icon: Armchair, color: 'text-amber-500', bg: 'bg-amber-500/10' },
   ]

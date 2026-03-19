@@ -6,6 +6,7 @@ import { notifyAdmin } from '@/lib/notifications'
 import { rateLimit } from '@/lib/rate-limit'
 
 export async function POST(request: NextRequest) {
+  const isAr = request.headers.get('accept-language')?.startsWith('ar')
   try {
     const limited = rateLimit(request, { limit: 3, windowMs: 60_000 })
     if (limited) return limited
@@ -19,7 +20,7 @@ export async function POST(request: NextRequest) {
 
     if (authError || !user) {
       return NextResponse.json(
-        { data: null, error: 'Unauthorized' },
+        { data: null, error: isAr ? 'يرجى تسجيل الدخول' : 'Unauthorized' },
         { status: 401 }
       )
     }
@@ -33,7 +34,7 @@ export async function POST(request: NextRequest) {
 
     if (!profile || profile.role !== 'buyer') {
       return NextResponse.json(
-        { data: null, error: 'Only buyers can apply to become providers' },
+        { data: null, error: isAr ? 'يمكن للمشترين فقط التقديم كمزودي خدمة' : 'Only buyers can apply to become providers' },
         { status: 403 }
       )
     }
@@ -49,7 +50,7 @@ export async function POST(request: NextRequest) {
 
     if (existingApp) {
       return NextResponse.json(
-        { data: null, error: 'You already have a pending or approved application' },
+        { data: null, error: isAr ? 'لديك طلب معلق أو مقبول بالفعل' : 'You already have a pending or approved application' },
         { status: 409 }
       )
     }
@@ -72,7 +73,7 @@ export async function POST(request: NextRequest) {
     const parsed = providerApplicationSchema.safeParse(rawData)
     if (!parsed.success) {
       return NextResponse.json(
-        { data: null, error: parsed.error.issues[0]?.message || 'Invalid input' },
+        { data: null, error: parsed.error.issues[0]?.message || (isAr ? 'بيانات غير صالحة' : 'Invalid input') },
         { status: 400 }
       )
     }
@@ -103,7 +104,7 @@ export async function POST(request: NextRequest) {
     if (insertError) {
       console.error('Failed to insert application:', insertError)
       return NextResponse.json(
-        { data: null, error: 'Failed to submit application' },
+        { data: null, error: isAr ? 'فشل في إرسال الطلب' : 'Failed to submit application' },
         { status: 500 }
       )
     }
@@ -128,7 +129,7 @@ export async function POST(request: NextRequest) {
   } catch (error) {
     console.error('Provider apply error:', error)
     return NextResponse.json(
-      { data: null, error: 'Internal server error' },
+      { data: null, error: isAr ? 'خطأ في الخادم' : 'Internal server error' },
       { status: 500 }
     )
   }

@@ -85,7 +85,10 @@ export default function AdminProviders() {
                     </td>
                     <td className="p-3">{p.commission_rate ? `${p.commission_rate}%` : locale === 'ar' ? 'افتراضي' : 'Default'}</td>
                     <td className="p-3">
-                      <Link href={`/${locale}/admin/providers/${p.id}`} className="inline-flex items-center gap-1 text-accent hover:underline">
+                      <Link
+                        href={`/${locale}/admin/providers/${p.id}`}
+                        className="inline-flex items-center gap-2 rounded-lg border border-border bg-muted/40 px-3 py-2 font-medium text-primary transition-colors hover:bg-muted"
+                      >
                         <Eye className="h-4 w-4" />
                         {locale === 'ar' ? 'تفاصيل' : 'Details'}
                       </Link>

@@ -9,8 +9,16 @@ function Popover({ ...props }: PopoverPrimitive.Root.Props) {
   return <PopoverPrimitive.Root data-slot="popover" {...props} />
 }
 
-function PopoverTrigger({ ...props }: PopoverPrimitive.Trigger.Props) {
-  return <PopoverPrimitive.Trigger data-slot="popover-trigger" {...props} />
+function PopoverTrigger({ id, ...props }: PopoverPrimitive.Trigger.Props) {
+  const generatedId = React.useId()
+
+  return (
+    <PopoverPrimitive.Trigger
+      data-slot="popover-trigger"
+      id={id ?? generatedId}
+      {...props}
+    />
+  )
 }
 
 function PopoverContent({

@@ -45,10 +45,18 @@ export async function PATCH(request: Request) {
     if (profile?.role !== 'admin') return NextResponse.json({ error: 'Forbidden' }, { status: 403 })
 
     const body = await request.json()
-    const { default_commission_rate, terms_content_ar, terms_content_en } = body as {
+    const {
+      default_commission_rate, terms_content_ar, terms_content_en,
+      bank_name_ar, bank_name_en, bank_iban, bank_account_holder_ar, bank_account_holder_en,
+    } = body as {
       default_commission_rate?: number
       terms_content_ar?: string
       terms_content_en?: string
+      bank_name_ar?: string
+      bank_name_en?: string
+      bank_iban?: string
+      bank_account_holder_ar?: string
+      bank_account_holder_en?: string
     }
 
     // Build update object with only provided fields
@@ -61,13 +69,13 @@ export async function PATCH(request: Request) {
       updateData.default_commission_rate = default_commission_rate
     }
 
-    if (terms_content_ar !== undefined) {
-      updateData.terms_content_ar = terms_content_ar
-    }
-
-    if (terms_content_en !== undefined) {
-      updateData.terms_content_en = terms_content_en
-    }
+    if (terms_content_ar !== undefined) updateData.terms_content_ar = terms_content_ar
+    if (terms_content_en !== undefined) updateData.terms_content_en = terms_content_en
+    if (bank_name_ar !== undefined) updateData.bank_name_ar = bank_name_ar
+    if (bank_name_en !== undefined) updateData.bank_name_en = bank_name_en
+    if (bank_iban !== undefined) updateData.bank_iban = bank_iban
+    if (bank_account_holder_ar !== undefined) updateData.bank_account_holder_ar = bank_account_holder_ar
+    if (bank_account_holder_en !== undefined) updateData.bank_account_holder_en = bank_account_holder_en
 
     if (Object.keys(updateData).length === 0) {
       return NextResponse.json({ error: 'No fields to update' }, { status: 400 })

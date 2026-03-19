@@ -293,6 +293,12 @@ export default function TripDetailClient({ params }: { params: Promise<{ id: str
                 <div className="flex items-baseline gap-2">
                     <p className="text-4xl xl:text-5xl font-black text-white tracking-tighter">{fmt(trip.price_per_seat)}</p>
                 </div>
+                {trip.trip_type === 'round_trip' && trip.price_per_seat_one_way && trip.price_per_seat_one_way > 0 && (
+                  <div className="mt-3 bg-white/5 rounded-xl p-3 border border-white/10">
+                    <p className="text-xs font-bold text-slate-400 mb-1">{isAr ? 'سعر ذهاب فقط' : 'One-way price'}</p>
+                    <p className="text-xl font-black text-accent">{fmt(trip.price_per_seat_one_way)}</p>
+                  </div>
+                )}
                 </div>
 
                 {isBookable && (

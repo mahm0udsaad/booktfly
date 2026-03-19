@@ -3,13 +3,15 @@ import { createClient } from '@/lib/supabase/server'
 import { supabaseAdmin } from '@/lib/supabase/admin'
 import { rateLimit } from '@/lib/rate-limit'
 
-const MAX_FILE_SIZE = 5 * 1024 * 1024
+const MAX_FILE_SIZE = 4 * 1024 * 1024
 const ALLOWED_TYPES = new Set(['application/pdf', 'image/jpeg', 'image/png'])
 
 export async function POST(request: NextRequest) {
   try {
     const limited = rateLimit(request, { limit: 20, windowMs: 60_000 })
     if (limited) return limited
+
+    const isAr = request.headers.get('accept-language')?.startsWith('ar')
 
     const supabase = await createClient()
     const {
@@ -19,7 +21,7 @@ export async function POST(request: NextRequest) {
 
     if (authError || !user) {
       return NextResponse.json(
-        { data: null, error: 'Unauthorized' },
+        { data: null, error: isAr ? 'يرجى تسجيل الدخول' : 'Unauthorized' },
         { status: 401 }
       )
     }
@@ -30,21 +32,21 @@ export async function POST(request: NextRequest) {
 
     if (!file || !field) {
       return NextResponse.json(
-        { data: null, error: 'Missing file or field name' },
+        { data: null, error: isAr ? 'الملف أو اسم الحقل مفقود' : 'Missing file or field name' },
         { status: 400 }
       )
     }
 
     if (!ALLOWED_TYPES.has(file.type)) {
       return NextResponse.json(
-        { data: null, error: 'Unsupported file type. Allowed: PDF, JPG, PNG.' },
+        { data: null, error: isAr ? 'نوع الملف غير مدعوم. المسموح: PDF و JPG و PNG.' : 'Unsupported file type. Allowed: PDF, JPG, PNG.' },
         { status: 400 }
       )
     }
 
     if (file.size > MAX_FILE_SIZE) {
       return NextResponse.json(
-        { data: null, error: 'File too large. Maximum 5 MB.' },
+        { data: null, error: isAr ? 'حجم الملف كبير جدا. الحد الأقصى 4 ميجابايت.' : 'File too large. Maximum 4 MB.' },
         { status: 400 }
       )
     }
@@ -60,7 +62,7 @@ export async function POST(request: NextRequest) {
     if (uploadError) {
       console.error('Document upload error:', uploadError)
       return NextResponse.json(
-        { data: null, error: 'Failed to upload document' },
+        { data: null, error: isAr ? 'فشل في رفع المستند' : 'Failed to upload document' },
         { status: 500 }
       )
     }
@@ -75,8 +77,9 @@ export async function POST(request: NextRequest) {
     })
   } catch (error) {
     console.error('Upload doc error:', error)
+    const isAr = request.headers.get('accept-language')?.startsWith('ar')
     return NextResponse.json(
-      { data: null, error: 'Internal server error' },
+      { data: null, error: isAr ? 'خطأ في الخادم' : 'Internal server error' },
       { status: 500 }
     )
   }

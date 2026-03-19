@@ -95,14 +95,14 @@ function TimeSelect({ value, onChange, locale }: { value: string; onChange: (v: 
         <div className="grid grid-cols-3 gap-3">
           <div className="relative">
             <span className="mb-1 block text-[11px] font-semibold uppercase tracking-wide text-slate-400">{locale === 'ar' ? 'الساعة' : 'Hour'}</span>
-            <select value={hour} onChange={(e) => onChange(from12HourParts(e.target.value, minute || '00', period))} className="h-10 w-full appearance-none rounded-lg border bg-background px-3 pe-8 text-sm">
+            <select value={hour} onChange={(e) => onChange(from12HourParts(e.target.value, minute || '00', period as 'AM' | 'PM'))} className="h-10 w-full appearance-none rounded-lg border bg-background px-3 pe-8 text-sm">
               <option value="">--</option>
               {TIME_HOURS_12.map((h) => <option key={h} value={h}>{h}</option>)}
             </select>
           </div>
           <div className="relative">
             <span className="mb-1 block text-[11px] font-semibold uppercase tracking-wide text-slate-400">{locale === 'ar' ? 'الدقيقة' : 'Minute'}</span>
-            <select value={minute} onChange={(e) => onChange(from12HourParts(hour || '12', e.target.value, period))} className="h-10 w-full appearance-none rounded-lg border bg-background px-3 pe-8 text-sm">
+            <select value={minute} onChange={(e) => onChange(from12HourParts(hour || '12', e.target.value, period as 'AM' | 'PM'))} className="h-10 w-full appearance-none rounded-lg border bg-background px-3 pe-8 text-sm">
               <option value="">--</option>
               {TIME_MINUTES.map((m) => <option key={m} value={m}>{m}</option>)}
             </select>

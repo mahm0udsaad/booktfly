@@ -6,6 +6,7 @@ import { notifyAdmin } from '@/lib/notifications'
 import { rateLimit } from '@/lib/rate-limit'
 
 export async function POST(request: NextRequest) {
+  const isAr = request.headers.get('accept-language')?.startsWith('ar')
   try {
     const limited = rateLimit(request, { limit: 3, windowMs: 60_000 })
     if (limited) return limited
@@ -19,7 +20,7 @@ export async function POST(request: NextRequest) {
 
     if (authError || !user) {
       return NextResponse.json(
-        { data: null, error: 'Unauthorized' },
+        { data: null, error: isAr ? 'يرجى تسجيل الدخول' : 'Unauthorized' },
         { status: 401 }
       )
     }
@@ -35,7 +36,7 @@ export async function POST(request: NextRequest) {
 
     if (!prevApp || prevApp.status !== 'rejected') {
       return NextResponse.json(
-        { data: null, error: 'No rejected application found to reapply' },
+        { data: null, error: isAr ? 'لا يوجد طلب مرفوض لإعادة التقديم' : 'No rejected application found to reapply' },
         { status: 400 }
       )
     }
@@ -51,12 +52,12 @@ export async function POST(request: NextRequest) {
 
     if (pendingApp) {
       return NextResponse.json(
-        { data: null, error: 'You already have a pending application' },
+        { data: null, error: isAr ? 'لديك طلب معلق بالفعل' : 'You already have a pending application' },
         { status: 409 }
       )
     }
 
-    // Parse JSON body (documents are uploaded client-side to Supabase Storage)
+    // Parse JSON body (documents are uploaded via /api/providers/upload-doc)
     const body = await request.json()
 
     const rawData = {
@@ -73,7 +74,7 @@ export async function POST(request: NextRequest) {
     const parsed = providerApplicationSchema.safeParse(rawData)
     if (!parsed.success) {
       return NextResponse.json(
-        { data: null, error: parsed.error.issues[0]?.message || 'Invalid input' },
+        { data: null, error: parsed.error.issues[0]?.message || (isAr ? 'بيانات غير صالحة' : 'Invalid input') },
         { status: 400 }
       )
     }
@@ -104,7 +105,7 @@ export async function POST(request: NextRequest) {
     if (insertError) {
       console.error('Failed to insert reapplication:', insertError)
       return NextResponse.json(
-        { data: null, error: 'Failed to submit application' },
+        { data: null, error: isAr ? 'فشل في إرسال الطلب' : 'Failed to submit application' },
         { status: 500 }
       )
     }
@@ -129,7 +130,7 @@ export async function POST(request: NextRequest) {
   } catch (error) {
     console.error('Provider reapply error:', error)
     return NextResponse.json(
-      { data: null, error: 'Internal server error' },
+      { data: null, error: isAr ? 'خطأ في الخادم' : 'Internal server error' },
       { status: 500 }
     )
   }

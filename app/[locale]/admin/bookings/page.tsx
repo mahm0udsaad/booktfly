@@ -44,7 +44,7 @@ export default function AdminBookings() {
     fetch()
   }, [statusFilter])
 
-  const statuses = ['', 'confirmed', 'payment_processing', 'payment_failed', 'refunded', 'cancelled']
+  const statuses = ['', 'confirmed', 'cancellation_pending', 'payment_processing', 'payment_failed', 'refunded', 'cancelled']
 
   return (
     <div>
@@ -99,8 +99,11 @@ export default function AdminBookings() {
                       </span>
                     </td>
                     <td className="p-3">
-                      <Link href={`/${locale}/admin/bookings/${b.id}`} className="inline-flex items-center gap-1 text-accent hover:underline text-xs">
-                        <Eye className="h-3 w-3" />
+                      <Link
+                        href={`/${locale}/admin/bookings/${b.id}`}
+                        className="inline-flex items-center gap-2 rounded-lg border border-border bg-muted/40 px-3 py-2 font-medium text-primary transition-colors hover:bg-muted"
+                      >
+                        <Eye className="h-4 w-4" />
                         {locale === 'ar' ? 'تفاصيل' : 'Details'}
                       </Link>
                     </td>

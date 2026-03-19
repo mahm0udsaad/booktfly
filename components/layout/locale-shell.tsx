@@ -15,13 +15,20 @@ export function LocaleShell({ children }: Props) {
   const pathname = usePathname()
   const segments = pathname.split('/')
   const segment = segments[2]
-  // Also hide if the segment is 'become-provider' and we are deep in it, but for now 'auth' is the main one we want to clean up.
   const hidePublicChrome = segment ? HIDDEN_CHROME_SEGMENTS.has(segment) : false
 
   return (
     <>
       {!hidePublicChrome && <Navbar />}
-      <main className="flex-1">{children}</main>
+      <main className="flex-1">
+        {hidePublicChrome ? (
+          children
+        ) : (
+          <div className="flex min-h-[100svh] flex-col">
+            <div className="flex-1">{children}</div>
+          </div>
+        )}
+      </main>
       {!hidePublicChrome && <Footer />}
       <Toaster />
     </>

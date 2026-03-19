@@ -278,8 +278,10 @@
     "applications": "طلبات الانضمام",
     "providers": "مزودو الخدمة",
     "trips": "الرحلات",
+    "trip_edit_requests": "طلبات تعديل الرحلات",
     "bookings": "الحجوزات",
     "revenue": "الإيرادات",
+    "withdrawals": "طلبات السحب",
     "settings": "الإعدادات",
     "pending_count": "طلبات بانتظار المراجعة",
     "approve": "موافقة",
@@ -321,6 +323,7 @@
     "payment_failed": "فشل الدفع",
     "refunded": "تم الاسترداد",
     "cancelled": "ملغي",
+    "cancellation_pending": "إلغاء قيد المراجعة",
     "suspended": "معلّق"
   },
   "notifications": {
@@ -334,7 +337,12 @@
     "account_suspended": "تم تعليق حسابك",
     "booking_confirmed": "تم تأكيد حجزك بنجاح",
     "payment_failed": "فشلت عملية الدفع لحجزك",
-    "booking_refunded": "تم استرداد مبلغ حجزك"
+    "booking_refunded": "تم استرداد مبلغ حجزك",
+    "trip_edit_approved": "تمت الموافقة على تعديل رحلتك",
+    "trip_edit_rejected": "تم رفض تعديل رحلتك",
+    "trip_updated": "تم تحديث رحلتك المحجوزة",
+    "cancellation_approved": "تم قبول طلب إلغاء حجزك",
+    "cancellation_rejected": "تم رفض طلب إلغاء حجزك"
   },
   "errors": {
     "generic": "حدث خطأ غير متوقع، يرجى المحاولة لاحقاً",

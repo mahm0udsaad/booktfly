@@ -66,8 +66,8 @@ export default function AdminDashboard() {
       value: stats.activeTrips,
       icon: Plane,
       href: `/${locale}/admin/trips`,
-      color: 'text-accent',
-      bg: 'bg-accent/10',
+      color: 'text-amber-600',
+      bg: 'bg-amber-500/10',
     },
     {
       label: t('bookings'),

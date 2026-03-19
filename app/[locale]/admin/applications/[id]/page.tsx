@@ -169,7 +169,7 @@ export default function AdminApplicationDetail() {
                     href={doc.url}
                     target="_blank"
                     rel="noopener noreferrer"
-                    className="flex items-center gap-1 text-sm text-accent hover:underline"
+                    className="inline-flex items-center gap-2 rounded-lg border border-border bg-white px-3 py-2 text-sm font-medium text-primary transition-colors hover:bg-muted"
                   >
                     <Download className="h-4 w-4" />
                     {locale === 'ar' ? 'عرض' : 'View'}

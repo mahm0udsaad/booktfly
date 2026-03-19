@@ -103,8 +103,12 @@ export default async function ProviderTripsPage({ searchParams }: Props) {
 
                   return (
                     <tr key={trip.id} className="hover:bg-slate-50/50 transition-colors group">
-                      <td className="p-5">
-                        <div className="flex items-center gap-3">
+                      <td className="p-0">
+                        <Link
+                          href={`/${locale}/provider/trips/${trip.id}`}
+                          className="block p-5 focus:outline-none focus-visible:ring-2 focus-visible:ring-primary/30"
+                        >
+                          <div className="flex items-center gap-3">
                            <div className="h-10 w-10 rounded-xl bg-slate-100 flex items-center justify-center shrink-0 text-slate-500 group-hover:bg-primary/10 group-hover:text-primary transition-colors">
                               <Plane className="h-4 w-4 -rotate-45" />
                            </div>
@@ -118,50 +122,71 @@ export default async function ProviderTripsPage({ searchParams }: Props) {
                                 {trip.airline} {trip.flight_number && `• ${trip.flight_number}`}
                                 <span className={cn(
                                   'px-1.5 py-0.5 rounded text-[10px] font-bold',
-                                  trip.listing_type === 'trip' ? 'bg-accent/10 text-accent' : 'bg-primary/10 text-primary'
+                                  trip.listing_type === 'trip' ? 'bg-amber-500/10 text-amber-700' : 'bg-primary/10 text-primary'
                                 )}>
                                   {isAr ? LISTING_TYPES[trip.listing_type || 'seats'].ar : LISTING_TYPES[trip.listing_type || 'seats'].en}
                                 </span>
                                 </p>
                            </div>
-                        </div>
-                      </td>
-                      <td className="p-5">
-                        <span className="inline-flex px-3 py-1.5 rounded-lg bg-slate-50 border border-slate-100 font-medium text-slate-700">
-                            {new Date(trip.departure_at).toLocaleDateString(
-                                locale === 'ar' ? 'ar-SA' : 'en-US',
-                                { month: 'short', day: 'numeric', year: 'numeric' }
-                            )}
-                        </span>
-                      </td>
-                      <td className="p-5">
-                        <div className="space-y-2 max-w-[120px]">
-                          <div className="flex justify-between items-center text-xs font-bold text-slate-600">
-                             <span>{trip.booked_seats} {isAr ? 'محجوز' : 'booked'}</span>
-                             <span className="text-slate-400">{trip.total_seats}</span>
                           </div>
-                          <div className="w-full h-2 bg-slate-100 rounded-full overflow-hidden">
-                            <div
-                              className="h-full bg-primary rounded-full transition-all"
-                              style={{ width: `${seatPercent}%` }}
-                            />
-                          </div>
-                        </div>
+                        </Link>
                       </td>
-                      <td className="p-5">
-                        <span className="font-black text-slate-900 text-base">
-                            {formatPrice(trip.price_per_seat, trip.currency)}
-                        </span>
-                      </td>
-                      <td className="p-5">
-                        <span
-                          className={cn(
-                            'px-3 py-1.5 rounded-lg text-xs font-bold uppercase tracking-widest',
-                            TRIP_STATUS_COLORS[trip.status] || 'bg-slate-100 text-slate-600'
-                          )}
+                      <td className="p-0">
+                        <Link
+                          href={`/${locale}/provider/trips/${trip.id}`}
+                          className="flex h-full items-center p-5 focus:outline-none focus-visible:ring-2 focus-visible:ring-primary/30"
                         >
-                          {ts(trip.status)}
-                        </span>
+                          <span className="inline-flex px-3 py-1.5 rounded-lg bg-slate-50 border border-slate-100 font-medium text-slate-700">
+                              {new Date(trip.departure_at).toLocaleDateString(
+                                  locale === 'ar' ? 'ar-SA' : 'en-US',
+                                  { month: 'short', day: 'numeric', year: 'numeric' }
+                              )}
+                          </span>
+                        </Link>
+                      </td>
+                      <td className="p-0">
+                        <Link
+                          href={`/${locale}/provider/trips/${trip.id}`}
+                          className="block p-5 focus:outline-none focus-visible:ring-2 focus-visible:ring-primary/30"
+                        >
+                          <div className="space-y-2 max-w-[120px]">
+                            <div className="flex justify-between items-center text-xs font-bold text-slate-600">
+                               <span>{trip.booked_seats} {isAr ? 'محجوز' : 'booked'}</span>
+                               <span className="text-slate-400">{trip.total_seats}</span>
+                            </div>
+                            <div className="w-full h-2 bg-slate-100 rounded-full overflow-hidden">
+                              <div
+                                className="h-full bg-primary rounded-full transition-all"
+                                style={{ width: `${seatPercent}%` }}
+                              />
+                            </div>
+                          </div>
+                        </Link>
+                      </td>
+                      <td className="p-0">
+                        <Link
+                          href={`/${locale}/provider/trips/${trip.id}`}
+                          className="flex h-full items-center p-5 focus:outline-none focus-visible:ring-2 focus-visible:ring-primary/30"
+                        >
+                          <span className="font-black text-slate-900 text-base">
+                              {formatPrice(trip.price_per_seat, trip.currency)}
+                          </span>
+                        </Link>
+                      </td>
+                      <td className="p-0">
+                        <Link
+                          href={`/${locale}/provider/trips/${trip.id}`}
+                          className="flex h-full items-center p-5 focus:outline-none focus-visible:ring-2 focus-visible:ring-primary/30"
+                        >
+                          <span
+                            className={cn(
+                              'px-3 py-1.5 rounded-lg text-xs font-bold uppercase tracking-widest',
+                              TRIP_STATUS_COLORS[trip.status] || 'bg-slate-100 text-slate-600'
+                            )}
+                          >
+                            {ts(trip.status)}
+                          </span>
+                        </Link>
                       </td>
                       <td className="p-5 text-end">
                         <Link

@@ -50,7 +50,7 @@ export function NotificationBell({ userId }: Props) {
               {unreadCount > 0 && (
                 <button
                   onClick={() => markAllAsRead()}
-                  className="text-xs text-accent hover:underline"
+                  className="text-xs font-medium text-primary hover:underline"
                 >
                   {t('mark_all_read')}
                 </button>

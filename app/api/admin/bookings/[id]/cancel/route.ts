@@ -64,6 +64,21 @@ export async function PATCH(
       if (rpcError) {
         console.error('Failed to release seats:', rpcError)
       }
+
+      // Debit provider wallet
+      try {
+        const ref = booking.id.slice(0, 8)
+        await supabaseAdmin.rpc('debit_wallet', {
+          p_provider_id: booking.provider_id,
+          p_amount: booking.provider_payout,
+          p_booking_id: booking.id,
+          p_type: 'debit',
+          p_desc_ar: `إلغاء حجز رقم ${ref}`,
+          p_desc_en: `Cancellation of booking #${ref}`,
+        })
+      } catch (walletErr) {
+        console.error('Failed to debit wallet:', walletErr)
+      }
     }
 
     // Notify the buyer

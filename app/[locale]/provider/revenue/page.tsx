@@ -3,6 +3,7 @@ import { getProvider } from '@/lib/supabase/provider'
 import { formatPrice } from '@/lib/utils'
 import type { Trip } from '@/types'
 import { DollarSign, TrendingUp, Wallet } from 'lucide-react'
+import { WalletSection } from '@/components/provider/wallet-section'
 
 type TripRevenue = {
   trip: Trip
@@ -61,34 +62,22 @@ export default async function ProviderRevenuePage({
   const perTrip = Array.from(tripMap.values()).sort((a, b) => b.net - a.net)
 
   const cards = [
-    {
-      label: t('gross_revenue'),
-      value: formatPrice(grossRevenue),
-      icon: DollarSign,
-    },
-    {
-      label: t('platform_commission'),
-      value: formatPrice(totalCommission),
-      icon: TrendingUp,
-    },
-    {
-      label: t('net_payout'),
-      value: formatPrice(netPayout),
-      icon: Wallet,
-    },
+    { label: t('gross_revenue'), value: formatPrice(grossRevenue), icon: DollarSign },
+    { label: t('platform_commission'), value: formatPrice(totalCommission), icon: TrendingUp },
+    { label: t('net_payout'), value: formatPrice(netPayout), icon: Wallet },
   ]
 
   return (
     <div className="space-y-8">
       <h1 className="text-2xl font-bold">{t('revenue')}</h1>
 
+      {/* Wallet Section (client component) */}
+      <WalletSection providerIban={provider.iban} />
+
       {/* Revenue Cards */}
       <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
         {cards.map((card) => (
-          <div
-            key={card.label}
-            className="bg-card border rounded-xl p-6 space-y-2"
-          >
+          <div key={card.label} className="bg-card border rounded-xl p-6 space-y-2">
             <div className="flex items-center gap-2 text-muted-foreground">
               <card.icon className="h-4 w-4" />
               <span className="text-sm">{card.label}</span>
@@ -106,29 +95,17 @@ export default async function ProviderRevenuePage({
           </h2>
         </div>
         {perTrip.length === 0 ? (
-          <div className="p-8 text-center text-sm text-muted-foreground">
-            {tc('no_results')}
-          </div>
+          <div className="p-8 text-center text-sm text-muted-foreground">{tc('no_results')}</div>
         ) : (
           <div className="overflow-x-auto">
             <table className="w-full text-sm">
               <thead>
                 <tr className="border-b bg-muted/30">
-                  <th className="text-start p-3 font-medium">
-                    {locale === 'ar' ? 'الرحلة' : 'Trip'}
-                  </th>
-                  <th className="text-start p-3 font-medium">
-                    {tc('bookings')}
-                  </th>
-                  <th className="text-start p-3 font-medium">
-                    {t('gross_revenue')}
-                  </th>
-                  <th className="text-start p-3 font-medium">
-                    {t('platform_commission')}
-                  </th>
-                  <th className="text-start p-3 font-medium">
-                    {t('net_payout')}
-                  </th>
+                  <th className="text-start p-3 font-medium">{locale === 'ar' ? 'الرحلة' : 'Trip'}</th>
+                  <th className="text-start p-3 font-medium">{tc('bookings')}</th>
+                  <th className="text-start p-3 font-medium">{t('gross_revenue')}</th>
+                  <th className="text-start p-3 font-medium">{t('platform_commission')}</th>
+                  <th className="text-start p-3 font-medium">{t('net_payout')}</th>
                 </tr>
               </thead>
               <tbody className="divide-y">
@@ -141,20 +118,13 @@ export default async function ProviderRevenuePage({
                           : `${row.trip.origin_city_en || row.trip.origin_city_ar} → ${row.trip.destination_city_en || row.trip.destination_city_ar}`}
                       </p>
                       <p className="text-xs text-muted-foreground">
-                        {row.trip.airline}
-                        {row.trip.flight_number && ` - ${row.trip.flight_number}`}
+                        {row.trip.airline}{row.trip.flight_number && ` - ${row.trip.flight_number}`}
                       </p>
                     </td>
                     <td className="p-3">{row.bookingCount}</td>
-                    <td className="p-3 font-medium">
-                      {formatPrice(row.gross)}
-                    </td>
-                    <td className="p-3 text-muted-foreground">
-                      {formatPrice(row.commission)}
-                    </td>
-                    <td className="p-3 font-bold text-success">
-                      {formatPrice(row.net)}
-                    </td>
+                    <td className="p-3 font-medium">{formatPrice(row.gross)}</td>
+                    <td className="p-3 text-muted-foreground">{formatPrice(row.commission)}</td>
+                    <td className="p-3 font-bold text-success">{formatPrice(row.net)}</td>
                   </tr>
                 ))}
               </tbody>

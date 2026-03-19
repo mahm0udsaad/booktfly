@@ -140,6 +140,11 @@ export function TripCard({ trip, className }: TripCardProps) {
                <div className="flex flex-col">
                  <span className="text-[10px] font-bold text-slate-400 uppercase tracking-widest mb-1">{t('common.per_seat')}</span>
                  <span className="text-2xl font-black text-slate-900 leading-none">{formattedPrice}</span>
+                 {trip.trip_type === 'round_trip' && trip.price_per_seat_one_way && trip.price_per_seat_one_way > 0 && (
+                   <span className="text-xs font-bold text-accent mt-1">
+                     {isAr ? 'ذهاب فقط: ' : 'One-way: '}{isAr ? formatPrice(trip.price_per_seat_one_way, trip.currency) : formatPriceEN(trip.price_per_seat_one_way, trip.currency)}
+                   </span>
+                 )}
                </div>
                
                <div className="h-10 w-10 rounded-full bg-slate-50 text-slate-400 flex items-center justify-center group-hover:bg-primary group-hover:text-white transition-all duration-300 shadow-sm group-hover:shadow-md group-hover:shadow-primary/20 ltr:group-hover:translate-x-1 rtl:group-hover:-translate-x-1 shrink-0">

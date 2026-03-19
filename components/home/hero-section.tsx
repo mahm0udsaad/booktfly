@@ -8,6 +8,7 @@ interface HeroSectionProps {
 export async function HeroSection({ locale }: HeroSectionProps) {
   const t = await getTranslations('homepage')
   const navT = await getTranslations('nav')
+  const tripsT = await getTranslations('trips')
 
   return (
     <HeroSectionClient
@@ -18,6 +19,12 @@ export async function HeroSection({ locale }: HeroSectionProps) {
       searchTo={t('search_to')}
       searchButton={t('search_button')}
       providerCta={navT('become_provider')}
+      departureFromLabel={tripsT('departure_from')}
+      arrivalToLabel={tripsT('arrival_to')}
+      roundTripLabel={tripsT('round_trip')}
+      oneWayLabel={tripsT('one_way')}
+      departureDateLabel={tripsT('departure_date')}
+      returnDateLabel={tripsT('return_date_filter')}
     />
   )
 }

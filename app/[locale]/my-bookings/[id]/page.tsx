@@ -20,6 +20,9 @@ import {
   ChevronLeft,
   ChevronRight,
   AlertTriangle,
+  XCircle,
+  Loader2,
+  Landmark,
 } from 'lucide-react'
 import { cn, formatPrice, formatPriceEN, shortId } from '@/lib/utils'
 import { TRIP_TYPES, CABIN_CLASSES, PROVIDER_TYPES } from '@/lib/constants'
@@ -37,6 +40,7 @@ export default function BookingDetailPage() {
 
   const [booking, setBooking] = useState<Booking | null>(null)
   const [loading, setLoading] = useState(true)
+  const [cancelling, setCancelling] = useState(false)
 
   const Arrow = isAr ? ArrowLeft : ArrowRight
   const Back = isAr ? ChevronRight : ChevronLeft
@@ -338,6 +342,107 @@ export default function BookingDetailPage() {
             )}
           </div>
         </div>
+
+        {/* Payment Processing - Link to checkout */}
+        {booking.status === 'payment_processing' && !booking.transfer_confirmed_at && (
+          <div className="rounded-xl border bg-warning/5 border-warning/20 p-6">
+            <div className="flex items-center gap-3 mb-3">
+              <Landmark className="h-5 w-5 text-warning shrink-0" />
+              <h3 className="font-semibold text-warning">{isAr ? 'بانتظار التحويل البنكي' : 'Awaiting Bank Transfer'}</h3>
+            </div>
+            <p className="text-sm text-muted-foreground mb-4">
+              {isAr ? 'يرجى إتمام التحويل البنكي لتأكيد حجزك' : 'Please complete the bank transfer to confirm your booking'}
+            </p>
+            <Link
+              href={`/${locale}/checkout/${booking.id}`}
+              className="inline-flex items-center gap-2 px-4 py-2.5 rounded-lg bg-primary text-white text-sm font-medium hover:bg-primary/90 transition-colors"
+            >
+              <CreditCard className="h-4 w-4" />
+              {isAr ? 'إتمام الدفع' : 'Complete Payment'}
+            </Link>
+          </div>
+        )}
+
+        {/* Transfer pending review */}
+        {booking.status === 'payment_processing' && booking.transfer_confirmed_at && (
+          <div className="rounded-xl border bg-warning/5 border-warning/20 p-6 flex items-center gap-3">
+            <Clock className="h-5 w-5 text-warning shrink-0" />
+            <p className="text-sm font-medium text-warning">
+              {isAr ? 'تم تأكيد التحويل وبانتظار مراجعة الإدارة' : 'Transfer confirmed, pending admin review'}
+            </p>
+          </div>
+        )}
+
+        {/* Payment failed / rejected */}
+        {booking.status === 'payment_failed' && (
+          <div className="rounded-xl border bg-destructive/5 border-destructive/20 p-6">
+            <div className="flex items-center gap-3 mb-3">
+              <XCircle className="h-5 w-5 text-destructive shrink-0" />
+              <h3 className="font-semibold text-destructive">{isAr ? 'تم رفض التحويل' : 'Transfer Rejected'}</h3>
+            </div>
+            {booking.payment_rejection_reason && (
+              <p className="text-sm text-muted-foreground mb-3">{booking.payment_rejection_reason}</p>
+            )}
+            <Link
+              href={`/${locale}/checkout/${booking.id}`}
+              className="inline-flex items-center gap-2 px-4 py-2.5 rounded-lg bg-primary text-white text-sm font-medium hover:bg-primary/90 transition-colors"
+            >
+              {isAr ? 'إعادة المحاولة' : 'Try Again'}
+            </Link>
+          </div>
+        )}
+
+        {/* Transfer receipt */}
+        {booking.transfer_receipt_url && (
+          <div className="rounded-xl border bg-card p-6">
+            <h3 className="font-semibold text-foreground mb-3">{isAr ? 'إيصال التحويل' : 'Transfer Receipt'}</h3>
+            <img src={booking.transfer_receipt_url} alt="Receipt" className="w-full max-h-64 object-contain rounded-lg border" />
+          </div>
+        )}
+
+        {/* Cancel Booking */}
+        {booking.status === 'confirmed' && (
+          <div className="rounded-xl border bg-card p-6">
+            <button
+              onClick={async () => {
+                setCancelling(true)
+                try {
+                  const res = await fetch(`/api/bookings/${booking.id}/cancel`, { method: 'PATCH' })
+                  if (res.ok) {
+                    setBooking((prev) => prev ? { ...prev, status: 'cancellation_pending' } : prev)
+                    const { toast } = await import('@/components/ui/toaster')
+                    toast({ title: t('common.success'), variant: 'success' })
+                  } else {
+                    const { toast } = await import('@/components/ui/toaster')
+                    toast({ title: t('errors.generic'), variant: 'destructive' })
+                  }
+                } catch {
+                  const { toast } = await import('@/components/ui/toaster')
+                  toast({ title: t('errors.generic'), variant: 'destructive' })
+                } finally {
+                  setCancelling(false)
+                }
+              }}
+              disabled={cancelling}
+              className="flex items-center gap-2 px-4 py-2.5 rounded-lg bg-destructive text-white text-sm font-medium hover:bg-destructive/90 disabled:opacity-50 transition-colors"
+            >
+              {cancelling ? <Loader2 className="h-4 w-4 animate-spin" /> : <XCircle className="h-4 w-4" />}
+              {isAr ? 'طلب إلغاء الحجز' : 'Request Cancellation'}
+            </button>
+            <p className="text-xs text-muted-foreground mt-2">
+              {isAr ? 'سيتم إرسال طلب الإلغاء للإدارة للمراجعة' : 'Your cancellation request will be sent to admin for review'}
+            </p>
+          </div>
+        )}
+
+        {booking.status === 'cancellation_pending' && (
+          <div className="rounded-xl border bg-warning/5 border-warning/20 p-6 flex items-center gap-3">
+            <Clock className="h-5 w-5 text-warning shrink-0" />
+            <p className="text-sm font-medium text-warning">
+              {isAr ? 'طلب الإلغاء قيد المراجعة من الإدارة' : 'Your cancellation request is pending admin review'}
+            </p>
+          </div>
+        )}
 
         {/* Provider info */}
         {provider && providerName && (

@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { createClient } from '@/lib/supabase/server'
 import { supabaseAdmin } from '@/lib/supabase/admin'
-import { notify } from '@/lib/notifications'
+import { notifyAdmin } from '@/lib/notifications'
 import { shortId } from '@/lib/utils'
 import { rateLimit } from '@/lib/rate-limit'
 
@@ -9,102 +9,71 @@ type RouteParams = {
   params: Promise<{ id: string }>
 }
 
-export async function POST(_request: NextRequest, { params }: RouteParams) {
+// Buyer confirms they have made the bank transfer
+export async function POST(request: NextRequest, { params }: RouteParams) {
   try {
-    const limited = rateLimit(_request, { limit: 5, windowMs: 60_000 })
+    const limited = rateLimit(request, { limit: 5, windowMs: 60_000 })
     if (limited) return limited
 
     const { id } = await params
     const supabase = await createClient()
 
-    // Auth is optional - guests can confirm their booking
     const {
       data: { user },
     } = await supabase.auth.getUser()
 
-    // Fetch booking
-    const { data: booking, error: fetchError } = await supabaseAdmin
+    const { data: booking } = await supabaseAdmin
       .from('bookings')
-      .select('*, trip:trips(*), provider:providers(*)')
+      .select('*, trip:trips(origin_city_ar, origin_city_en, destination_city_ar, destination_city_en)')
       .eq('id', id)
       .single()
 
-    if (fetchError || !booking) {
-      return NextResponse.json(
-        { error: 'Booking not found' },
-        { status: 404 }
-      )
+    if (!booking) {
+      return NextResponse.json({ error: 'Booking not found' }, { status: 404 })
     }
 
-    // If booking has a buyer_id, only that buyer can confirm
     if (booking.buyer_id && (!user || booking.buyer_id !== user.id)) {
-      return NextResponse.json(
-        { error: 'Forbidden' },
-        { status: 403 }
-      )
+      return NextResponse.json({ error: 'Forbidden' }, { status: 403 })
     }
 
     if (booking.status !== 'payment_processing') {
-      return NextResponse.json(
-        { error: 'Booking cannot be confirmed in current status' },
-        { status: 400 }
-      )
+      return NextResponse.json({ error: 'Booking cannot be confirmed in current status' }, { status: 400 })
     }
 
-    // Update booking status to confirmed
-    const { error: updateError } = await supabaseAdmin
+    // Parse optional receipt URL from body
+    let receiptUrl = booking.transfer_receipt_url
+    try {
+      const body = await request.json()
+      if (body.transfer_receipt_url) {
+        receiptUrl = body.transfer_receipt_url
+      }
+    } catch {
+      // No body or invalid JSON is fine
+    }
+
+    // Mark transfer as confirmed by user (still needs admin approval)
+    await supabaseAdmin
       .from('bookings')
       .update({
-        status: 'confirmed',
-        paid_at: new Date().toISOString(),
-        moyasar_payment_id: `dummy_${Date.now()}`,
+        transfer_confirmed_at: new Date().toISOString(),
+        transfer_receipt_url: receiptUrl,
       })
       .eq('id', id)
 
-    if (updateError) {
-      return NextResponse.json(
-        { error: 'Failed to confirm booking' },
-        { status: 500 }
-      )
-    }
-
+    // Notify admin to review payment
     const ref = shortId(id)
-    const tripOrigin = booking.trip?.origin_city_ar || ''
-    const tripDest = booking.trip?.destination_city_ar || ''
-    const tripOriginEn = booking.trip?.origin_city_en || tripOrigin
-    const tripDestEn = booking.trip?.destination_city_en || tripDest
+    const tripInfo = booking.trip as any
+    await notifyAdmin({
+      type: 'payment_approved',
+      titleAr: 'تحويل بنكي بانتظار المراجعة',
+      titleEn: 'Bank transfer pending review',
+      bodyAr: `الحجز رقم ${ref} - تم تأكيد التحويل البنكي ويحتاج مراجعة`,
+      bodyEn: `Booking #${ref} - Bank transfer confirmed, needs review`,
+      data: { booking_id: id },
+    })
 
-    // Notify buyer (only if authenticated user)
-    if (booking.buyer_id) {
-      await notify({
-        userId: booking.buyer_id,
-        type: 'booking_confirmed',
-        titleAr: 'تم تأكيد حجزك بنجاح',
-        titleEn: 'Your booking has been confirmed',
-        bodyAr: `تم تأكيد حجزك رقم ${ref} للرحلة من ${tripOrigin} إلى ${tripDest}`,
-        bodyEn: `Your booking #${ref} for the trip from ${tripOriginEn} to ${tripDestEn} has been confirmed.`,
-        data: { booking_id: id },
-      })
-    }
-
-    // Notify provider
-    if (booking.provider?.user_id) {
-      await notify({
-        userId: booking.provider.user_id,
-        type: 'new_booking',
-        titleAr: 'لديك حجز جديد',
-        titleEn: 'You have a new booking',
-        bodyAr: `تم استلام حجز جديد رقم ${ref} للرحلة من ${tripOrigin} إلى ${tripDest} - ${booking.seats_count} مقاعد`,
-        bodyEn: `New booking #${ref} received for the trip from ${tripOriginEn} to ${tripDestEn} - ${booking.seats_count} seat(s).`,
-        data: { booking_id: id },
-      })
-    }
-
-    return NextResponse.json({ success: true, bookingId: id })
+    return NextResponse.json({ success: true })
   } catch {
-    return NextResponse.json(
-      { error: 'Internal server error' },
-      { status: 500 }
-    )
+    return NextResponse.json({ error: 'Internal server error' }, { status: 500 })
   }
 }

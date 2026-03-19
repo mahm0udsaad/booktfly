@@ -23,6 +23,7 @@ type ProfileForm = {
   company_description_en: string
   contact_email: string
   contact_phone: string
+  iban: string
 }
 
 const DOC_BADGES = [
@@ -52,6 +53,7 @@ export function ProviderProfileForm({ provider }: { provider: Provider }) {
       company_description_en: provider.company_description_en || '',
       contact_email: provider.contact_email,
       contact_phone: provider.contact_phone,
+      iban: provider.iban || '',
     })
     setLogoPreview(provider.logo_url)
   }, [provider])
@@ -96,6 +98,7 @@ export function ProviderProfileForm({ provider }: { provider: Provider }) {
           company_description_en: data.company_description_en || null,
           contact_email: data.contact_email,
           contact_phone: data.contact_phone,
+          iban: data.iban || null,
           logo_url: logoUrl,
           updated_at: new Date().toISOString(),
         })
@@ -235,6 +238,29 @@ export function ProviderProfileForm({ provider }: { provider: Provider }) {
               className="w-full border rounded-lg px-4 py-2.5 text-sm bg-background focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary"
             />
           </div>
+        </div>
+      </div>
+
+      {/* IBAN */}
+      <div className="bg-card border rounded-xl p-6 space-y-4">
+        <h2 className="font-semibold">
+          {locale === 'ar' ? 'الحساب البنكي' : 'Bank Account'}
+        </h2>
+        <div>
+          <label className="text-sm font-medium block mb-1.5">
+            IBAN
+          </label>
+          <input
+            {...register('iban')}
+            dir="ltr"
+            placeholder="SA0380000000608010167519"
+            className="w-full border rounded-lg px-4 py-2.5 text-sm bg-background focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary font-mono"
+          />
+          <p className="text-xs text-muted-foreground mt-1">
+            {locale === 'ar'
+              ? 'مطلوب لاستلام المدفوعات وطلبات السحب'
+              : 'Required for receiving payouts and withdrawal requests'}
+          </p>
         </div>
       </div>
 

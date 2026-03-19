@@ -278,8 +278,10 @@
     "applications": "Provider Applications",
     "providers": "Providers",
     "trips": "Trips",
+    "trip_edit_requests": "Trip Edit Requests",
     "bookings": "Bookings",
     "revenue": "Revenue",
+    "withdrawals": "Withdrawals",
     "settings": "Platform Settings",
     "pending_count": "Pending Applications",
     "approve": "Approve",
@@ -321,6 +323,7 @@
     "payment_failed": "Payment Failed",
     "refunded": "Refunded",
     "cancelled": "Cancelled",
+    "cancellation_pending": "Cancellation Pending",
     "suspended": "Suspended"
   },
   "notifications": {
@@ -334,7 +337,12 @@
     "account_suspended": "Your account has been suspended. Please contact support for more information.",
     "booking_confirmed": "Your booking has been confirmed. Have a great trip!",
     "payment_failed": "Your payment could not be processed. Please try again.",
-    "booking_refunded": "Your booking has been refunded. The amount will be returned to your account."
+    "booking_refunded": "Your booking has been refunded. The amount will be returned to your account.",
+    "trip_edit_approved": "Your trip edit has been approved.",
+    "trip_edit_rejected": "Your trip edit request was rejected.",
+    "trip_updated": "Your booked trip has been updated.",
+    "cancellation_approved": "Your cancellation request has been approved.",
+    "cancellation_rejected": "Your cancellation request was rejected."
   },
   "errors": {
     "generic": "Something went wrong. Please try again later.",

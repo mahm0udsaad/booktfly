@@ -111,7 +111,7 @@ function AdminApplicationsContent() {
                     <td className="p-3">
                       <Link
                         href={`/${locale}/admin/applications/${app.id}`}
-                        className="inline-flex items-center gap-1 text-accent hover:underline"
+                        className="inline-flex items-center gap-2 rounded-lg border border-border bg-muted/40 px-3 py-2 font-medium text-primary transition-colors hover:bg-muted"
                       >
                         <Eye className="h-4 w-4" />
                         {t('admin.review')}

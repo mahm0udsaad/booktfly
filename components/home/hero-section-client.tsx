@@ -3,7 +3,6 @@
 import { useState } from 'react'
 import { Search, ArrowRight, ArrowLeftRight, ChevronDown, CalendarIcon } from 'lucide-react'
 import Link from 'next/link'
-import { useTranslations } from 'next-intl'
 import { format } from 'date-fns'
 import { arSA, enUS } from 'date-fns/locale'
 import { Calendar } from '@/components/ui/calendar'
@@ -19,6 +18,12 @@ interface HeroSectionClientProps {
   searchTo: string
   searchButton: string
   providerCta: string
+  departureFromLabel: string
+  arrivalToLabel: string
+  roundTripLabel: string
+  oneWayLabel: string
+  departureDateLabel: string
+  returnDateLabel: string
 }
 
 export function HeroSectionClient({
@@ -29,9 +34,14 @@ export function HeroSectionClient({
   searchTo,
   searchButton,
   providerCta,
+  departureFromLabel,
+  arrivalToLabel,
+  roundTripLabel,
+  oneWayLabel,
+  departureDateLabel,
+  returnDateLabel,
 }: HeroSectionClientProps) {
   const isAr = locale === 'ar'
-  const t = useTranslations('trips')
   const [origin, setOrigin] = useState('')
   const [destination, setDestination] = useState('')
   const [tripType, setTripType] = useState('round_trip')
@@ -127,7 +137,7 @@ export function HeroSectionClient({
                 <CityAutocomplete
                   value={origin}
                   onChange={setOrigin}
-                  placeholder={t('departure_from')}
+                  placeholder={departureFromLabel}
                   className="h-16 text-lg rounded-[1.5rem]"
                   showLocateButton
                 />
@@ -147,7 +157,7 @@ export function HeroSectionClient({
                 <CityAutocomplete
                   value={destination}
                   onChange={setDestination}
-                  placeholder={t('arrival_to')}
+                  placeholder={arrivalToLabel}
                   className="h-16 text-lg rounded-[1.5rem]"
                 />
               </div>
@@ -161,8 +171,8 @@ export function HeroSectionClient({
                     onChange={(e) => setTripType(e.target.value)}
                     className="appearance-none w-full h-14 px-5 pe-10 rounded-2xl bg-slate-50 border-none text-slate-700 text-sm font-semibold focus:ring-2 focus:ring-primary focus:outline-none hover:bg-slate-100 transition-colors cursor-pointer"
                   >
-                    <option value="round_trip">{t('round_trip')}</option>
-                    <option value="one_way">{t('one_way')}</option>
+                    <option value="round_trip">{roundTripLabel}</option>
+                    <option value="one_way">{oneWayLabel}</option>
                   </select>
                   <ChevronDown className="absolute end-4 top-1/2 -translate-y-1/2 h-4 w-4 text-slate-400 pointer-events-none" />
                 </div>
@@ -175,7 +185,7 @@ export function HeroSectionClient({
                       !departureDate ? "text-slate-400" : "text-slate-700"
                     )}
                   >
-                    {departureDate ? format(departureDate, 'PPP', { locale: isAr ? arSA : enUS }) : <span>{t('departure_date')}</span>}
+                    {departureDate ? format(departureDate, 'PPP', { locale: isAr ? arSA : enUS }) : <span>{departureDateLabel}</span>}
                     <CalendarIcon className="h-4 w-4 opacity-50" />
                   </PopoverTrigger>
                   <PopoverContent className="w-auto p-0" align="start">
@@ -197,7 +207,7 @@ export function HeroSectionClient({
                       !returnDate ? "text-slate-400" : "text-slate-700"
                     )}
                   >
-                    {returnDate ? format(returnDate, 'PPP', { locale: isAr ? arSA : enUS }) : <span>{t('return_date_filter')}</span>}
+                    {returnDate ? format(returnDate, 'PPP', { locale: isAr ? arSA : enUS }) : <span>{returnDateLabel}</span>}
                     <CalendarIcon className="h-4 w-4 opacity-50" />
                   </PopoverTrigger>
                   <PopoverContent className="w-auto p-0" align="start">

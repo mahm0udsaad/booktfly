@@ -13,20 +13,26 @@ import {
   Settings,
   Menu,
   X,
-  LogOut
+  LogOut,
+  PenSquare,
+  Banknote,
+  ExternalLink,
 } from 'lucide-react'
 import { useState } from 'react'
 import { cn } from '@/lib/utils'
 import { createClient } from '@/lib/supabase/client'
 import { signOutAndRedirect } from '@/lib/auth-client'
+import { LanguageSwitcher } from '@/components/layout/language-switcher'
 
 const NAV_ITEMS = [
   { key: 'dashboard', icon: LayoutDashboard, href: '/admin' },
   { key: 'applications', icon: FileText, href: '/admin/applications' },
   { key: 'providers', icon: Building2, href: '/admin/providers' },
   { key: 'trips', icon: Plane, href: '/admin/trips' },
+  { key: 'trip_edit_requests', icon: PenSquare, href: '/admin/trip-edit-requests' },
   { key: 'bookings', icon: BookOpen, href: '/admin/bookings' },
   { key: 'revenue', icon: DollarSign, href: '/admin/revenue' },
+  { key: 'withdrawals', icon: Banknote, href: '/admin/withdrawals' },
   { key: 'settings', icon: Settings, href: '/admin/settings' },
 ]
 
@@ -76,14 +82,25 @@ export function AdminSidebar() {
         })}
       </div>
 
-      <div className="p-4 border-t border-slate-100">
-         <button
-            onClick={handleSignOut}
-            className="flex items-center gap-4 w-full px-4 py-3.5 rounded-2xl text-sm font-bold text-destructive hover:bg-destructive/10 transition-colors"
-          >
-            <LogOut className="h-5 w-5" />
-            {locale === 'ar' ? 'تسجيل الخروج' : 'Logout'}
-          </button>
+      <div className="p-4 border-t border-slate-100 space-y-3">
+        <Link
+          href={`/${locale}`}
+          onClick={() => setMobileOpen(false)}
+          className="flex items-center gap-4 w-full px-4 py-3.5 rounded-2xl text-sm font-bold text-slate-600 hover:bg-slate-50 hover:text-slate-900 transition-colors"
+        >
+          <ExternalLink className="h-5 w-5 text-slate-400" />
+          {locale === 'ar' ? 'الموقع الرئيسي' : 'Main website'}
+        </Link>
+        <div className="rounded-2xl border border-slate-200 bg-slate-50 p-1">
+          <LanguageSwitcher />
+        </div>
+        <button
+          onClick={handleSignOut}
+          className="flex items-center gap-4 w-full px-4 py-3.5 rounded-2xl text-sm font-bold text-destructive hover:bg-destructive/10 transition-colors"
+        >
+          <LogOut className="h-5 w-5" />
+          {locale === 'ar' ? 'تسجيل الخروج' : 'Logout'}
+        </button>
       </div>
     </div>
   )

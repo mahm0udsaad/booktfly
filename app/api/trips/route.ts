@@ -67,7 +67,12 @@ export async function GET(request: NextRequest) {
     }
 
     if (tripType) {
-      query = query.eq('trip_type', tripType)
+      if (tripType === 'one_way') {
+        // Show both one_way trips AND round_trip trips (user can book one-way on round-trip)
+        query = query.in('trip_type', ['one_way', 'round_trip'])
+      } else {
+        query = query.eq('trip_type', tripType)
+      }
     }
 
     if (cabinClass) {

@@ -6,7 +6,7 @@ import { useLocale, useTranslations } from 'next-intl'
 import { createClient } from '@/lib/supabase/client'
 import { toast } from '@/components/ui/toaster'
 import { BOOKING_STATUS_COLORS } from '@/lib/constants'
-import { ArrowRight, RotateCcw, XCircle } from 'lucide-react'
+import { ArrowRight, RotateCcw, XCircle, Check, X } from 'lucide-react'
 import { shortId } from '@/lib/utils'
 
 export default function AdminBookingDetail() {
@@ -18,6 +18,7 @@ export default function AdminBookingDetail() {
   const [booking, setBooking] = useState<any>(null)
   const [loading, setLoading] = useState(true)
   const [submitting, setSubmitting] = useState(false)
+  const [rejectionReason, setRejectionReason] = useState('')
 
   useEffect(() => {
     async function fetch() {
@@ -139,6 +140,98 @@ export default function AdminBookingDetail() {
           </div>
         </div>
 
+        {/* Transfer Receipt */}
+        {booking.transfer_receipt_url && (
+          <div className="bg-white rounded-xl border p-6">
+            <h3 className="font-semibold mb-3">{locale === 'ar' ? 'إيصال التحويل' : 'Transfer Receipt'}</h3>
+            <img src={booking.transfer_receipt_url} alt="Transfer receipt" className="w-full max-h-80 object-contain rounded-lg border" />
+            {booking.transfer_confirmed_at && (
+              <p className="text-xs text-muted-foreground mt-2">
+                {locale === 'ar' ? 'تم التأكيد بتاريخ: ' : 'Confirmed at: '}
+                {new Date(booking.transfer_confirmed_at).toLocaleString(locale === 'ar' ? 'ar-SA' : 'en-US')}
+              </p>
+            )}
+          </div>
+        )}
+
+        {/* Payment Approval (for bank transfer) */}
+        {booking.status === 'payment_processing' && (
+          <div className="bg-white rounded-xl border p-6">
+            <h3 className="font-semibold mb-3 flex items-center gap-2 text-warning">
+              {locale === 'ar' ? 'مراجعة التحويل البنكي' : 'Review Bank Transfer'}
+            </h3>
+            <p className="text-sm text-muted-foreground mb-4">
+              {booking.transfer_confirmed_at
+                ? (locale === 'ar' ? 'المستخدم أكد إتمام التحويل. يرجى التحقق والموافقة.' : 'User confirmed the transfer. Please verify and approve.')
+                : (locale === 'ar' ? 'بانتظار تأكيد التحويل من المستخدم' : 'Waiting for user to confirm transfer')}
+            </p>
+            <div className="flex flex-col gap-3">
+              <div className="flex gap-3">
+                <button
+                  onClick={async () => {
+                    setSubmitting(true)
+                    const res = await fetch(`/api/admin/bookings/${id}/approve-payment`, {
+                      method: 'PATCH',
+                      headers: { 'Content-Type': 'application/json' },
+                      body: JSON.stringify({ action: 'approve' }),
+                    })
+                    if (res.ok) {
+                      toast({ title: t('common.success'), variant: 'success' })
+                      setBooking((prev: any) => ({ ...prev, status: 'confirmed' }))
+                    } else {
+                      toast({ title: t('errors.generic'), variant: 'destructive' })
+                    }
+                    setSubmitting(false)
+                  }}
+                  disabled={submitting}
+                  className="flex items-center gap-2 px-4 py-2.5 rounded-lg bg-success text-white text-sm font-medium hover:bg-success/90 disabled:opacity-50 transition-colors"
+                >
+                  <Check className="h-4 w-4" />
+                  {locale === 'ar' ? 'تأكيد الدفع' : 'Approve Payment'}
+                </button>
+              </div>
+              <div className="flex gap-2">
+                <input
+                  value={rejectionReason}
+                  onChange={(e) => setRejectionReason(e.target.value)}
+                  placeholder={locale === 'ar' ? 'سبب الرفض...' : 'Rejection reason...'}
+                  className="flex-1 border rounded-lg px-3 py-2 text-sm"
+                />
+                <button
+                  onClick={async () => {
+                    setSubmitting(true)
+                    const res = await fetch(`/api/admin/bookings/${id}/approve-payment`, {
+                      method: 'PATCH',
+                      headers: { 'Content-Type': 'application/json' },
+                      body: JSON.stringify({ action: 'reject', reason: rejectionReason }),
+                    })
+                    if (res.ok) {
+                      toast({ title: t('common.success'), variant: 'success' })
+                      setBooking((prev: any) => ({ ...prev, status: 'payment_failed' }))
+                    } else {
+                      toast({ title: t('errors.generic'), variant: 'destructive' })
+                    }
+                    setSubmitting(false)
+                  }}
+                  disabled={submitting}
+                  className="flex items-center gap-2 px-4 py-2.5 rounded-lg bg-destructive text-white text-sm font-medium hover:bg-destructive/90 disabled:opacity-50 transition-colors"
+                >
+                  <X className="h-4 w-4" />
+                  {locale === 'ar' ? 'رفض الدفع' : 'Reject Payment'}
+                </button>
+              </div>
+            </div>
+          </div>
+        )}
+
+        {/* Payment Rejection Reason */}
+        {booking.payment_rejection_reason && (
+          <div className="bg-destructive/5 rounded-xl border border-destructive/20 p-4">
+            <p className="text-xs text-muted-foreground mb-1">{locale === 'ar' ? 'سبب رفض الدفع' : 'Payment Rejection Reason'}</p>
+            <p className="text-sm font-medium text-destructive">{booking.payment_rejection_reason}</p>
+          </div>
+        )}
+
         {/* Actions */}
         {booking.status === 'confirmed' && (
           <div className="bg-white rounded-xl border p-6 flex gap-3">
@@ -158,6 +251,65 @@ export default function AdminBookingDetail() {
               <XCircle className="h-4 w-4" />
               {t('admin.cancel_booking')}
             </button>
+          </div>
+        )}
+
+        {/* Cancellation Pending Actions */}
+        {booking.status === 'cancellation_pending' && (
+          <div className="bg-white rounded-xl border p-6">
+            <h3 className="font-semibold mb-3 flex items-center gap-2 text-warning">
+              <XCircle className="h-5 w-5" />
+              {locale === 'ar' ? 'طلب إلغاء من المستخدم' : 'User Cancellation Request'}
+            </h3>
+            <p className="text-sm text-muted-foreground mb-4">
+              {locale === 'ar' ? 'المستخدم يطلب إلغاء هذا الحجز. يرجى الموافقة أو الرفض.' : 'The user has requested to cancel this booking. Please approve or reject.'}
+            </p>
+            <div className="flex gap-3">
+              <button
+                onClick={async () => {
+                  setSubmitting(true)
+                  const res = await fetch(`/api/admin/bookings/${id}/approve-cancel`, {
+                    method: 'PATCH',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ action: 'approve' }),
+                  })
+                  if (res.ok) {
+                    toast({ title: t('common.success'), variant: 'success' })
+                    setBooking((prev: any) => ({ ...prev, status: 'cancelled' }))
+                  } else {
+                    toast({ title: t('errors.generic'), variant: 'destructive' })
+                  }
+                  setSubmitting(false)
+                }}
+                disabled={submitting}
+                className="flex items-center gap-2 px-4 py-2.5 rounded-lg bg-success text-white text-sm font-medium hover:bg-success/90 disabled:opacity-50 transition-colors"
+              >
+                <Check className="h-4 w-4" />
+                {t('admin.approve')}
+              </button>
+              <button
+                onClick={async () => {
+                  setSubmitting(true)
+                  const res = await fetch(`/api/admin/bookings/${id}/approve-cancel`, {
+                    method: 'PATCH',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ action: 'reject' }),
+                  })
+                  if (res.ok) {
+                    toast({ title: t('common.success'), variant: 'success' })
+                    setBooking((prev: any) => ({ ...prev, status: 'confirmed' }))
+                  } else {
+                    toast({ title: t('errors.generic'), variant: 'destructive' })
+                  }
+                  setSubmitting(false)
+                }}
+                disabled={submitting}
+                className="flex items-center gap-2 px-4 py-2.5 rounded-lg bg-destructive text-white text-sm font-medium hover:bg-destructive/90 disabled:opacity-50 transition-colors"
+              >
+                <X className="h-4 w-4" />
+                {t('admin.reject')}
+              </button>
+            </div>
           </div>
         )}
       </div>
