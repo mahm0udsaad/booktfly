@@ -1,5 +1,6 @@
 import type { Metadata } from 'next'
 import { supabaseAdmin } from '@/lib/supabase/admin'
+import { capitalizeFirst } from '@/lib/utils'
 import TripDetailClient from './trip-detail-client'
 
 type Props = {
@@ -20,8 +21,8 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
     return { title: isAr ? 'رحلة غير موجودة' : 'Trip Not Found' }
   }
 
-  const origin = isAr ? trip.origin_city_ar : (trip.origin_city_en || trip.origin_city_ar)
-  const dest = isAr ? trip.destination_city_ar : (trip.destination_city_en || trip.destination_city_ar)
+  const origin = isAr ? trip.origin_city_ar : capitalizeFirst(trip.origin_city_en || trip.origin_city_ar)
+  const dest = isAr ? trip.destination_city_ar : capitalizeFirst(trip.destination_city_en || trip.destination_city_ar)
   const price = trip.price_per_seat
   const date = new Date(trip.departure_at).toLocaleDateString(isAr ? 'ar-SA' : 'en-US', {
     year: 'numeric',

@@ -99,7 +99,11 @@ export async function PATCH(request: NextRequest, { params }: RouteParams) {
     for (const field of stringFields) {
       const val = formData.get(field)
       if (val !== null) {
-        updates[field] = val || null
+        let finalVal: string | null = (val as string) || null
+        if (finalVal && (field === 'origin_code' || field === 'destination_code')) {
+          finalVal = finalVal.toUpperCase()
+        }
+        updates[field] = finalVal
       }
     }
 

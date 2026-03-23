@@ -120,8 +120,6 @@ export default function AdminBookingDetail() {
                   <div><p className="text-muted-foreground">{locale === 'ar' ? 'تاريخ الميلاد' : 'Date of Birth'}</p><p className="font-medium" dir="ltr">{p.date_of_birth}</p></div>
                   <div><p className="text-muted-foreground">{locale === 'ar' ? 'رقم الجواز أو البطاقة' : 'Passport / ID'}</p><p className="font-medium" dir="ltr">{p.id_number}</p></div>
                   <div><p className="text-muted-foreground">{locale === 'ar' ? 'تاريخ انتهاء الإثبات' : 'ID Expiry'}</p><p className="font-medium" dir="ltr">{p.id_expiry_date}</p></div>
-                  <div><p className="text-muted-foreground">{locale === 'ar' ? 'الجوال' : 'Phone'}</p><p className="font-medium" dir="ltr">{p.phone}</p></div>
-                  <div><p className="text-muted-foreground">{locale === 'ar' ? 'البريد الإلكتروني' : 'Email'}</p><p className="font-medium" dir="ltr">{p.email}</p></div>
                 </div>
               ))}
             </div>

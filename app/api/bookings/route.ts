@@ -29,12 +29,12 @@ export async function POST(request: NextRequest) {
       )
     }
 
-    const { trip_id, seats_count, passengers } = parsed.data
+    const { trip_id, seats_count, passengers, contact } = parsed.data
     const booking_type = (body.booking_type === 'one_way' ? 'one_way' : 'round_trip') as 'one_way' | 'round_trip'
     const firstPassenger = passengers[0]
     const passenger_name = `${firstPassenger.first_name} ${firstPassenger.last_name}`
-    const passenger_phone = firstPassenger.phone
-    const passenger_email = firstPassenger.email
+    const passenger_phone = contact.phone
+    const passenger_email = contact.email
 
     // Fetch trip details
     const { data: trip, error: tripError } = await supabase

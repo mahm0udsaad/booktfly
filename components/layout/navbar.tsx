@@ -4,7 +4,7 @@ import Link from 'next/link'
 import { useLocale, useTranslations } from 'next-intl'
 import { useState, useEffect } from 'react'
 import Image from 'next/image'
-import { Menu, X, ChevronDown, LogOut, User, LayoutDashboard, Plane, Ticket } from 'lucide-react'
+import { Menu, X, ChevronDown, LogOut, User, LayoutDashboard, Plane, Ticket, BedDouble } from 'lucide-react'
 import { motion, AnimatePresence } from 'framer-motion'
 import { useUser } from '@/hooks/use-user'
 import { LanguageSwitcher } from './language-switcher'
@@ -72,12 +72,23 @@ export function Navbar() {
               href={`/${locale}/trips`}
               className={cn(
                 "px-6 py-2.5 text-sm font-bold transition-all rounded-xl",
-                scrolled 
-                  ? "text-primary hover:bg-primary/5" 
+                scrolled
+                  ? "text-primary hover:bg-primary/5"
                   : "text-primary hover:bg-white/50"
               )}
             >
               {t('nav.browse_trips')}
+            </Link>
+            <Link
+              href={`/${locale}/rooms`}
+              className={cn(
+                "px-6 py-2.5 text-sm font-bold transition-all rounded-xl",
+                scrolled
+                  ? "text-primary hover:bg-primary/5"
+                  : "text-primary hover:bg-white/50"
+              )}
+            >
+              {t('nav.browse_rooms')}
             </Link>
           </div>
 
@@ -230,6 +241,14 @@ export function Navbar() {
                 >
                   <Plane className="h-4 w-4 text-muted-foreground" />
                   {t('nav.browse_trips')}
+                </Link>
+                <Link
+                  href={`/${locale}/rooms`}
+                  onClick={() => setMobileOpen(false)}
+                  className="flex items-center gap-3 px-4 py-3 text-sm font-medium text-foreground hover:bg-muted rounded-xl transition-colors"
+                >
+                  <BedDouble className="h-4 w-4 text-muted-foreground" />
+                  {t('nav.browse_rooms')}
                 </Link>
                 {user && (
                   <>

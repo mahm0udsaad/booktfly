@@ -22,6 +22,7 @@ export function NotificationBell({ userId }: Props) {
   const getNotificationLink = (data: Record<string, string> | null): string | null => {
     if (!data) return null
     if (data.booking_id) return `/${locale}/my-bookings/${data.booking_id}`
+    if (data.room_booking_id) return `/${locale}/my-bookings/rooms/${data.room_booking_id}`
     if (data.trip_id) return `/${locale}/trips/${data.trip_id}`
     if (data.application_id) return `/${locale}/become-provider/status`
     return null

@@ -2,7 +2,7 @@
 
 import { useEffect, useState, use } from 'react'
 import { useLocale, useTranslations } from 'next-intl'
-import { useRouter } from 'next/navigation'
+import { useRouter, useSearchParams } from 'next/navigation'
 import Link from 'next/link'
 import {
   Landmark,
@@ -18,10 +18,10 @@ import {
   Clock,
   Upload,
 } from 'lucide-react'
-import { cn, formatPrice, formatPriceEN, shortId } from '@/lib/utils'
+import { formatPrice, formatPriceEN, shortId } from '@/lib/utils'
 import { toast } from '@/components/ui/toaster'
-import { DetailPageSkeleton } from '@/components/shared/loading-skeleton'
-import type { Booking } from '@/types'
+import { CheckoutPageSkeleton } from '@/components/shared/loading-skeleton'
+import type { Booking, RoomBooking } from '@/types'
 
 type CheckoutState = 'transfer' | 'uploading' | 'submitted' | 'confirmed' | 'failed'
 
@@ -38,9 +38,12 @@ export default function CheckoutPage({ params }: { params: Promise<{ bookingId: 
   const locale = useLocale()
   const isAr = locale === 'ar'
   const router = useRouter()
+  const searchParams = useSearchParams()
   const { bookingId } = use(params)
+  const isRoomBooking = searchParams.get('type') === 'room'
 
   const [booking, setBooking] = useState<Booking | null>(null)
+  const [roomBooking, setRoomBooking] = useState<RoomBooking | null>(null)
   const [bankInfo, setBankInfo] = useState<BankInfo | null>(null)
   const [loading, setLoading] = useState(true)
   const [state, setState] = useState<CheckoutState>('transfer')
@@ -49,21 +52,29 @@ export default function CheckoutPage({ params }: { params: Promise<{ bookingId: 
   const [receiptPreview, setReceiptPreview] = useState<string | null>(null)
 
   const Back = isAr ? ChevronRight : ChevronLeft
-  const tripCurrency = booking?.trip?.currency || 'SAR'
-  const fmt = (amount: number) => isAr ? formatPrice(amount, tripCurrency) : formatPriceEN(amount, tripCurrency)
+  const currency = roomBooking?.room?.currency || booking?.trip?.currency || 'SAR'
+  const fmt = (amount: number) => isAr ? formatPrice(amount, currency) : formatPriceEN(amount, currency)
+  const detailHref = isRoomBooking ? `/${locale}/my-bookings/rooms/${bookingId}` : `/${locale}/my-bookings/${bookingId}`
+  const browseHref = isRoomBooking ? `/${locale}/rooms` : `/${locale}/trips`
+  const backHref = isRoomBooking ? `/${locale}/rooms` : `/${locale}/my-bookings/${bookingId}`
+  const bookingRecord = isRoomBooking ? roomBooking : booking
 
   useEffect(() => {
     async function fetchData() {
       try {
         const [bookingRes, bankRes] = await Promise.all([
-          fetch(`/api/bookings/${bookingId}`),
+          fetch(isRoomBooking ? `/api/room-bookings/${bookingId}` : `/api/bookings/${bookingId}`),
           fetch('/api/bank-info'),
         ])
         const bookingData = await bookingRes.json()
         const bankData = await bankRes.json()
 
         if (bookingData.booking) {
-          setBooking(bookingData.booking)
+          if (isRoomBooking) {
+            setRoomBooking(bookingData.booking)
+          } else {
+            setBooking(bookingData.booking)
+          }
           if (bookingData.booking.status === 'confirmed') {
             setState('confirmed')
           } else if (bookingData.booking.transfer_confirmed_at) {
@@ -80,7 +91,7 @@ export default function CheckoutPage({ params }: { params: Promise<{ bookingId: 
       }
     }
     fetchData()
-  }, [bookingId])
+  }, [bookingId, isRoomBooking])
 
   const copyToClipboard = (text: string, field: string) => {
     navigator.clipboard.writeText(text)
@@ -102,7 +113,7 @@ export default function CheckoutPage({ params }: { params: Promise<{ bookingId: 
       if (receiptFile) {
         const formData = new FormData()
         formData.append('receipt', receiptFile)
-        const uploadRes = await fetch(`/api/bookings/${bookingId}/upload-receipt`, {
+        const uploadRes = await fetch(isRoomBooking ? `/api/room-bookings/${bookingId}/upload-receipt` : `/api/bookings/${bookingId}/upload-receipt`, {
           method: 'POST',
           body: formData,
         })
@@ -113,7 +124,7 @@ export default function CheckoutPage({ params }: { params: Promise<{ bookingId: 
       }
 
       // Confirm transfer
-      const res = await fetch(`/api/bookings/${bookingId}/confirm`, {
+      const res = await fetch(isRoomBooking ? `/api/room-bookings/${bookingId}/confirm` : `/api/bookings/${bookingId}/confirm`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ transfer_receipt_url: receiptUrl }),
@@ -131,9 +142,9 @@ export default function CheckoutPage({ params }: { params: Promise<{ bookingId: 
     }
   }
 
-  if (loading) return <DetailPageSkeleton />
+  if (loading) return <CheckoutPageSkeleton />
 
-  if (!booking) {
+  if (!bookingRecord) {
     return (
       <div className="max-w-lg mx-auto px-4 py-24 text-center animate-fade-in-up">
         <div className="inline-flex items-center justify-center w-20 h-20 rounded-full bg-destructive/10 mb-6">
@@ -141,7 +152,7 @@ export default function CheckoutPage({ params }: { params: Promise<{ bookingId: 
         </div>
         <h2 className="text-3xl font-black text-slate-900 mb-4">{t('errors.not_found')}</h2>
         <button
-          onClick={() => router.push(`/${locale}/trips`)}
+          onClick={() => router.push(browseHref)}
           className="inline-flex items-center gap-2 px-6 py-3 rounded-xl bg-slate-100 text-slate-700 font-bold hover:bg-slate-200 transition-colors mt-2"
         >
           {t('common.back')}
@@ -163,11 +174,11 @@ export default function CheckoutPage({ params }: { params: Promise<{ bookingId: 
           {t('booking.booking_reference')}: <span className="font-mono font-bold text-slate-900 bg-slate-100 px-2 py-1 rounded-md">{shortId(bookingId)}</span>
         </p>
         <div className="flex flex-col sm:flex-row gap-3 md:gap-4 justify-center">
-          <Link href={`/${locale}/my-bookings/${bookingId}`} className="inline-flex items-center justify-center px-6 md:px-8 py-3.5 md:py-4 rounded-xl md:rounded-2xl bg-primary text-white text-sm md:text-base font-bold hover:bg-primary/90 transition-all shadow-lg shadow-primary/20">
+          <Link href={detailHref} className="inline-flex items-center justify-center px-6 md:px-8 py-3.5 md:py-4 rounded-xl md:rounded-2xl bg-primary text-white text-sm md:text-base font-bold hover:bg-primary/90 transition-all shadow-lg shadow-primary/20">
             {t('booking.view_booking')}
           </Link>
-          <Link href={`/${locale}/trips`} className="inline-flex items-center justify-center px-6 md:px-8 py-3.5 md:py-4 rounded-xl md:rounded-2xl bg-slate-50 text-slate-700 border border-slate-200 text-sm md:text-base font-bold hover:bg-slate-100 transition-all">
-            {isAr ? 'تصفح الرحلات' : 'Browse Trips'}
+          <Link href={browseHref} className="inline-flex items-center justify-center px-6 md:px-8 py-3.5 md:py-4 rounded-xl md:rounded-2xl bg-slate-50 text-slate-700 border border-slate-200 text-sm md:text-base font-bold hover:bg-slate-100 transition-all">
+            {isAr ? (isRoomBooking ? 'تصفح الغرف' : 'تصفح الرحلات') : (isRoomBooking ? 'Browse Rooms' : 'Browse Trips')}
           </Link>
         </div>
       </div>
@@ -191,11 +202,11 @@ export default function CheckoutPage({ params }: { params: Promise<{ bookingId: 
           {t('booking.booking_reference')}: <span className="font-mono font-bold text-slate-700">{shortId(bookingId)}</span>
         </p>
         <div className="flex flex-col sm:flex-row gap-3 justify-center">
-          <Link href={`/${locale}/my-bookings/${bookingId}`} className="inline-flex items-center justify-center px-6 py-3.5 rounded-xl bg-primary text-white text-sm font-bold hover:bg-primary/90 transition-all shadow-lg shadow-primary/20">
+          <Link href={detailHref} className="inline-flex items-center justify-center px-6 py-3.5 rounded-xl bg-primary text-white text-sm font-bold hover:bg-primary/90 transition-all shadow-lg shadow-primary/20">
             {t('booking.view_booking')}
           </Link>
-          <Link href={`/${locale}/trips`} className="inline-flex items-center justify-center px-6 py-3.5 rounded-xl bg-slate-50 text-slate-700 border border-slate-200 text-sm font-bold hover:bg-slate-100 transition-all">
-            {isAr ? 'تصفح الرحلات' : 'Browse Trips'}
+          <Link href={browseHref} className="inline-flex items-center justify-center px-6 py-3.5 rounded-xl bg-slate-50 text-slate-700 border border-slate-200 text-sm font-bold hover:bg-slate-100 transition-all">
+            {isAr ? (isRoomBooking ? 'تصفح الغرف' : 'تصفح الرحلات') : (isRoomBooking ? 'Browse Rooms' : 'Browse Trips')}
           </Link>
         </div>
       </div>
@@ -209,7 +220,7 @@ export default function CheckoutPage({ params }: { params: Promise<{ bookingId: 
   return (
     <div className="max-w-xl mx-auto px-4 sm:px-6 pt-24 pb-12 md:pt-32 lg:pt-36 animate-fade-in-up">
       <button
-        onClick={() => router.back()}
+        onClick={() => router.push(backHref)}
         className="group inline-flex items-center gap-2 text-xs md:text-sm font-bold text-slate-500 hover:text-slate-900 mb-6 md:mb-8 transition-colors"
       >
         <div className="p-1.5 md:p-2 rounded-full bg-slate-100 group-hover:bg-slate-200 transition-colors">
@@ -227,12 +238,16 @@ export default function CheckoutPage({ params }: { params: Promise<{ bookingId: 
       <div className="rounded-[1.5rem] md:rounded-[2rem] border border-slate-200 bg-white p-5 md:p-6 mb-6 md:mb-8 shadow-sm">
         <h3 className="text-[10px] md:text-xs font-bold text-slate-400 uppercase tracking-widest mb-4 md:mb-6">{t('booking.price_summary')}</h3>
         <div className="flex justify-between items-center text-sm md:text-base font-semibold text-slate-700 mb-4 md:mb-6">
-          <span>{fmt(booking.price_per_seat)} × {booking.seats_count} {t('common.seats')}</span>
-          <span className="text-slate-900 bg-slate-50 px-2 md:px-3 py-1 md:py-1.5 rounded-lg border border-slate-100">{fmt(booking.total_amount)}</span>
+          <span>
+            {isRoomBooking && roomBooking
+              ? `${fmt(roomBooking.price_per_night)} × ${roomBooking.number_of_days} ${isAr ? 'ليالٍ' : 'nights'} × ${roomBooking.rooms_count} ${isAr ? 'غرف' : 'rooms'}`
+              : `${fmt(booking!.price_per_seat)} × ${booking!.seats_count} ${t('common.seats')}`}
+          </span>
+          <span className="text-slate-900 bg-slate-50 px-2 md:px-3 py-1 md:py-1.5 rounded-lg border border-slate-100">{fmt(bookingRecord.total_amount)}</span>
         </div>
         <div className="border-t border-slate-100 pt-4 md:pt-6 flex justify-between items-end">
           <span className="text-sm md:text-base font-bold text-slate-900">{t('booking.total_amount')}</span>
-          <span className="text-3xl md:text-4xl font-black text-primary tracking-tighter">{fmt(booking.total_amount)}</span>
+          <span className="text-3xl md:text-4xl font-black text-primary tracking-tighter">{fmt(bookingRecord.total_amount)}</span>
         </div>
       </div>
 
@@ -285,10 +300,10 @@ export default function CheckoutPage({ params }: { params: Promise<{ bookingId: 
             <div className="bg-primary/5 border border-primary/10 rounded-xl p-4 flex items-center justify-between">
               <div>
                 <p className="text-[10px] md:text-xs font-bold text-primary/60 uppercase tracking-widest mb-1">{isAr ? 'المبلغ المطلوب تحويله' : 'Amount to Transfer'}</p>
-                <p className="text-xl md:text-2xl font-black text-primary">{fmt(booking.total_amount)}</p>
+                <p className="text-xl md:text-2xl font-black text-primary">{fmt(bookingRecord.total_amount)}</p>
               </div>
               <button
-                onClick={() => copyToClipboard(String(booking.total_amount), 'amount')}
+                onClick={() => copyToClipboard(String(bookingRecord.total_amount), 'amount')}
                 className="shrink-0 p-2.5 rounded-xl bg-white border border-primary/20 hover:bg-primary/5 transition-colors"
               >
                 {copiedField === 'amount' ? <Check className="h-4 w-4 text-success" /> : <Copy className="h-4 w-4 text-primary" />}

@@ -108,6 +108,39 @@ export const NATIONALITIES = [
   { code: 'DE', ar: 'ألماني', en: 'German' },
 ] as const
 
+export const MAX_ROOMS_PER_BOOKING = 10
+
+export const ROOM_STATUS_COLORS: Record<string, string> = {
+  active: 'bg-success/10 text-success',
+  deactivated: 'bg-warning/10 text-warning',
+  removed: 'bg-destructive/10 text-destructive',
+}
+
+export const ROOM_CATEGORIES = {
+  hotel: { ar: 'فندق', en: 'Hotel' },
+  hostel: { ar: 'نزل', en: 'Hostel' },
+  apartment: { ar: 'شقة مفروشة', en: 'Furnished Apartment' },
+  chalet: { ar: 'شاليه', en: 'Chalet' },
+  resort: { ar: 'منتجع', en: 'Resort' },
+  villa: { ar: 'فيلا', en: 'Villa' },
+} as const
+
+export const ROOM_AMENITIES = {
+  wifi: { ar: 'واي فاي', en: 'WiFi' },
+  parking: { ar: 'موقف سيارات', en: 'Parking' },
+  pool: { ar: 'مسبح', en: 'Pool' },
+  breakfast: { ar: 'فطور', en: 'Breakfast' },
+  ac: { ar: 'تكييف', en: 'Air Conditioning' },
+  gym: { ar: 'صالة رياضية', en: 'Gym' },
+  kitchen: { ar: 'مطبخ', en: 'Kitchen' },
+  laundry: { ar: 'غسيل', en: 'Laundry' },
+  elevator: { ar: 'مصعد', en: 'Elevator' },
+  room_service: { ar: 'خدمة الغرف', en: 'Room Service' },
+  beach_access: { ar: 'وصول للشاطئ', en: 'Beach Access' },
+  bbq: { ar: 'شواء', en: 'BBQ' },
+  haram_view: { ar: 'إطلالة على الحرم', en: 'Haram View' },
+} as const
+
 export const APPLICATION_STATUS_COLORS: Record<string, string> = {
   pending_review: 'bg-warning/10 text-warning',
   approved: 'bg-success/10 text-success',

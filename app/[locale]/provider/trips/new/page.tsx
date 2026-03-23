@@ -182,7 +182,8 @@ export default function NewTripPage() {
     watch,
     setValue,
   } = useForm<FormData>({
-    resolver: zodResolver(getTripSchema(locale)),
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    resolver: zodResolver(getTripSchema(locale)) as any,
     defaultValues: {
       listing_type: 'seats',
       trip_type: 'one_way',
@@ -191,6 +192,8 @@ export default function NewTripPage() {
       total_seats: 1,
       price_per_seat: 0,
       price_per_seat_one_way: 0,
+      origin_code: undefined,
+      destination_code: undefined,
     },
   })
 

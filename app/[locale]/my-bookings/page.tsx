@@ -10,19 +10,25 @@ import {
   ArrowLeft,
   Ticket,
   Users,
+  BedDouble,
+  Clock,
 } from 'lucide-react'
-import { cn, formatPrice, formatPriceEN, shortId } from '@/lib/utils'
+import { capitalizeFirst, formatPrice, formatPriceEN, shortId } from '@/lib/utils'
 import { BookingStatusBadge } from '@/components/bookings/booking-status-badge'
 import { EmptyState } from '@/components/shared/empty-state'
 import { CardSkeleton } from '@/components/shared/loading-skeleton'
-import type { Booking } from '@/types'
+import type { Booking, RoomBooking } from '@/types'
+
+type BuyerBookingItem =
+  | { kind: 'flight'; item: Booking }
+  | { kind: 'room'; item: RoomBooking }
 
 export default function MyBookingsPage() {
   const t = useTranslations()
   const locale = useLocale()
   const isAr = locale === 'ar'
 
-  const [bookings, setBookings] = useState<Booking[]>([])
+  const [bookings, setBookings] = useState<BuyerBookingItem[]>([])
   const [loading, setLoading] = useState(true)
 
   const Arrow = isAr ? ArrowLeft : ArrowRight
@@ -30,9 +36,16 @@ export default function MyBookingsPage() {
   useEffect(() => {
     async function fetchBookings() {
       try {
-        const res = await fetch('/api/bookings/mine')
-        const data = await res.json()
-        setBookings(data.bookings || [])
+        const [flightRes, roomRes] = await Promise.all([
+          fetch('/api/bookings/mine'),
+          fetch('/api/room-bookings/mine'),
+        ])
+        const [flightData, roomData] = await Promise.all([flightRes.json(), roomRes.json()])
+        const merged: BuyerBookingItem[] = [
+          ...((flightData.bookings || []).map((item: Booking) => ({ kind: 'flight' as const, item }))),
+          ...((roomData.bookings || []).map((item: RoomBooking) => ({ kind: 'room' as const, item }))),
+        ].sort((a, b) => new Date(b.item.created_at).getTime() - new Date(a.item.created_at).getTime())
+        setBookings(merged)
       } catch {
         // Error handled
       } finally {
@@ -65,17 +78,21 @@ export default function MyBookingsPage() {
         />
       ) : (
         <div className="space-y-4">
-          {bookings.map((booking) => {
-            const trip = booking.trip
+          {bookings.map(({ kind, item }) => {
+            const isRoom = kind === 'room'
+            const booking = isRoom ? null : item as Booking
+            const roomBooking = isRoom ? item as RoomBooking : null
+            const trip = booking?.trip
+            const room = roomBooking?.room
             const originCity = trip
               ? isAr
                 ? trip.origin_city_ar
-                : (trip.origin_city_en || trip.origin_city_ar)
+                : capitalizeFirst(trip.origin_city_en || trip.origin_city_ar)
               : ''
             const destCity = trip
               ? isAr
                 ? trip.destination_city_ar
-                : (trip.destination_city_en || trip.destination_city_ar)
+                : capitalizeFirst(trip.destination_city_en || trip.destination_city_ar)
               : ''
             const departureDate = trip
               ? new Date(trip.departure_at).toLocaleDateString(
@@ -83,26 +100,31 @@ export default function MyBookingsPage() {
                   { year: 'numeric', month: 'short', day: 'numeric' }
                 )
               : ''
-            const createdDate = new Date(booking.created_at).toLocaleDateString(
+            const roomName = room ? (isAr ? room.name_ar : (room.name_en || room.name_ar)) : ''
+            const roomCity = room ? (isAr ? room.city_ar : capitalizeFirst(room.city_en || room.city_ar)) : ''
+            const createdDate = new Date(item.created_at).toLocaleDateString(
               isAr ? 'ar-SA' : 'en-US',
               { year: 'numeric', month: 'short', day: 'numeric' }
             )
 
             return (
               <Link
-                key={booking.id}
-                href={`/${locale}/my-bookings/${booking.id}`}
+                key={item.id}
+                href={isRoom ? `/${locale}/my-bookings/rooms/${item.id}` : `/${locale}/my-bookings/${item.id}`}
                 className="block"
               >
                 <div className="rounded-xl border bg-card p-5 hover:shadow-md hover:border-accent/30 transition-all">
                   <div className="flex items-start justify-between mb-3">
                     <div className="flex items-center gap-2 text-sm text-muted-foreground">
                       <span className="font-mono font-medium text-foreground">
-                        #{shortId(booking.id)}
+                        #{shortId(item.id)}
+                      </span>
+                      <span className="rounded-full bg-slate-100 px-2 py-0.5 text-[10px] font-bold uppercase tracking-widest text-slate-600">
+                        {isRoom ? (isAr ? 'غرفة' : 'Room') : (isAr ? 'رحلة' : 'Flight')}
                       </span>
                       <span>{createdDate}</span>
                     </div>
-                    <BookingStatusBadge status={booking.status} />
+                    <BookingStatusBadge status={item.status} />
                   </div>
 
                   {trip && (
@@ -124,15 +146,44 @@ export default function MyBookingsPage() {
                     </>
                   )}
 
+                  {roomBooking && room && (
+                    <>
+                      <div className="flex items-center gap-3 mb-2">
+                        <BedDouble className="h-4 w-4 text-accent shrink-0" />
+                        <span className="font-semibold">{roomName}</span>
+                      </div>
+
+                      <div className="flex flex-wrap items-center gap-4 text-sm text-muted-foreground mb-3">
+                        <span className="flex items-center gap-1">
+                          <Calendar className="h-3.5 w-3.5" />
+                          {roomBooking.check_in_date}
+                        </span>
+                        <span className="flex items-center gap-1">
+                          <Clock className="h-3.5 w-3.5" />
+                          {roomBooking.number_of_days} {isAr ? 'ليالٍ' : 'nights'}
+                        </span>
+                        <span>{roomCity}</span>
+                      </div>
+                    </>
+                  )}
+
                   <div className="flex items-center justify-between pt-3 border-t">
                     <div className="flex items-center gap-4 text-sm">
-                      <span className="flex items-center gap-1 text-muted-foreground">
-                        <Users className="h-3.5 w-3.5" />
-                        {booking.seats_count} {t('common.seats')}
-                      </span>
+                      {booking && (
+                        <span className="flex items-center gap-1 text-muted-foreground">
+                          <Users className="h-3.5 w-3.5" />
+                          {booking.seats_count} {t('common.seats')}
+                        </span>
+                      )}
+                      {roomBooking && (
+                        <span className="flex items-center gap-1 text-muted-foreground">
+                          <Users className="h-3.5 w-3.5" />
+                          {roomBooking.number_of_people} {isAr ? 'ضيف' : 'guest(s)'}
+                        </span>
+                      )}
                     </div>
                     <span className="text-lg font-bold text-accent">
-                      {fmt(booking.total_amount, booking.trip?.currency)}
+                      {fmt(item.total_amount, booking?.trip?.currency || room?.currency)}
                     </span>
                   </div>
                 </div>

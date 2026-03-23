@@ -1,6 +1,8 @@
 'use client'
 
 import { Suspense, useEffect, useState, use } from 'react'
+import { format, isValid, parseISO } from 'date-fns'
+import { arSA, enUS } from 'date-fns/locale'
 import { useLocale, useTranslations } from 'next-intl'
 import { useRouter, useSearchParams } from 'next/navigation'
 import { useForm, useFieldArray } from 'react-hook-form'
@@ -23,23 +25,28 @@ import {
   CheckCircle,
   Cake,
   IdCard,
+  CalendarIcon,
 } from 'lucide-react'
-import { cn, formatPrice, formatPriceEN } from '@/lib/utils'
+import { capitalizeFirst, cn, formatPrice, formatPriceEN } from '@/lib/utils'
 import { MAX_SEATS_PER_BOOKING } from '@/lib/constants'
 import { TRIP_TYPES, CABIN_CLASSES, BOOKING_TYPES } from '@/lib/constants'
-import { DetailPageSkeleton } from '@/components/shared/loading-skeleton'
-import { getBookingSchema, passengerSchema } from '@/lib/validations'
+import { BookingPageSkeleton } from '@/components/shared/loading-skeleton'
+import { bookingContactSchema, getBookingSchema, passengerSchema } from '@/lib/validations'
+import { Calendar as DateCalendar } from '@/components/ui/calendar'
+import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover'
 import { toast } from '@/components/ui/toaster'
 import type { Trip } from '@/types'
 
 type PassengerFormData = z.infer<typeof passengerSchema>
+type BookingContactFormData = z.infer<typeof bookingContactSchema>
 type BookingFormData = {
+  contact: BookingContactFormData
   passengers: PassengerFormData[]
 }
 
 export default function BookTripPage({ params }: { params: Promise<{ id: string, locale: string }> }) {
   return (
-    <Suspense fallback={<DetailPageSkeleton />}>
+    <Suspense fallback={<BookingPageSkeleton />}>
       <BookTripContent params={params} />
     </Suspense>
   )
@@ -57,8 +64,9 @@ function BookTripContent({ params }: { params: Promise<{ id: string, locale: str
   const [loading, setLoading] = useState(true)
   const [submitting, setSubmitting] = useState(false)
   const initialSeatsCount = parseInt(searchParams.get('seats') || '1', 10)
+  const initialBookingType = searchParams.get('bookingType') === 'one_way' ? 'one_way' : 'round_trip'
   const [seatsCount, setSeatsCount] = useState(initialSeatsCount)
-  const [bookingType, setBookingType] = useState<'round_trip' | 'one_way'>('round_trip')
+  const [bookingType] = useState<'round_trip' | 'one_way'>(initialBookingType)
 
   const Arrow = isAr ? ArrowLeft : ArrowRight
   const Back = isAr ? ChevronRight : ChevronLeft
@@ -69,20 +77,24 @@ function BookTripContent({ params }: { params: Promise<{ id: string, locale: str
     date_of_birth: '',
     id_number: '',
     id_expiry_date: '',
-    phone: '',
-    email: '',
   }
 
   const {
     register,
     handleSubmit,
     control,
+    setValue,
+    watch,
     formState: { errors },
   } = useForm<BookingFormData>({
     resolver: zodResolver(
-      getBookingSchema(locale).pick({ passengers: true })
+      getBookingSchema(locale).pick({ contact: true, passengers: true })
     ),
     defaultValues: {
+      contact: {
+        phone: '',
+        email: '',
+      },
       passengers: Array(initialSeatsCount).fill(defaultPassenger),
     },
   })
@@ -120,7 +132,7 @@ function BookTripContent({ params }: { params: Promise<{ id: string, locale: str
     fetchTrip()
   }, [tripId])
 
-  if (loading) return <DetailPageSkeleton />
+  if (loading) return <BookingPageSkeleton />
 
   if (!trip || trip.status !== 'active') {
     router.push(`/${locale}/trips/${tripId}`)
@@ -130,14 +142,15 @@ function BookTripContent({ params }: { params: Promise<{ id: string, locale: str
   const remaining = trip.total_seats - trip.booked_seats
   const maxBookable = Math.min(remaining, MAX_SEATS_PER_BOOKING)
   const isRoundTrip = trip.trip_type === 'round_trip'
-  const effectivePrice = isRoundTrip && bookingType === 'one_way' && trip.price_per_seat_one_way
+  const resolvedBookingType = isRoundTrip ? bookingType : 'one_way'
+  const effectivePrice = isRoundTrip && resolvedBookingType === 'one_way' && trip.price_per_seat_one_way
     ? trip.price_per_seat_one_way
     : trip.price_per_seat
   const totalPrice = effectivePrice * seatsCount
   const fmt = (amount: number) => isAr ? formatPrice(amount, trip.currency) : formatPriceEN(amount, trip.currency)
 
-  const originCity = isAr ? trip.origin_city_ar : (trip.origin_city_en || trip.origin_city_ar)
-  const destCity = isAr ? trip.destination_city_ar : (trip.destination_city_en || trip.destination_city_ar)
+  const originCity = isAr ? trip.origin_city_ar : capitalizeFirst(trip.origin_city_en || trip.origin_city_ar)
+  const destCity = isAr ? trip.destination_city_ar : capitalizeFirst(trip.destination_city_en || trip.destination_city_ar)
 
   const departureDate = new Date(trip.departure_at).toLocaleDateString(
     isAr ? 'ar-SA' : 'en-US',
@@ -154,11 +167,12 @@ function BookTripContent({ params }: { params: Promise<{ id: string, locale: str
         body: JSON.stringify({
           trip_id: tripId,
           passenger_name: `${firstPassenger.first_name} ${firstPassenger.last_name}`,
-          passenger_phone: firstPassenger.phone,
-          passenger_email: firstPassenger.email,
+          passenger_phone: data.contact.phone,
+          passenger_email: data.contact.email,
           seats_count: seatsCount,
+          contact: data.contact,
           passengers: data.passengers,
-          booking_type: isRoundTrip ? bookingType : 'one_way',
+          booking_type: resolvedBookingType,
         }),
       })
 
@@ -188,13 +202,19 @@ function BookTripContent({ params }: { params: Promise<{ id: string, locale: str
   const inputClass = 'w-full h-12 md:h-14 px-4 md:px-5 rounded-xl md:rounded-2xl bg-slate-50 border-none text-slate-900 text-base md:text-lg font-semibold focus:ring-2 focus:ring-primary focus:outline-none transition-colors hover:bg-slate-100'
   const errorInputClass = 'ring-2 ring-destructive bg-destructive/5'
   const labelClass = 'flex items-center gap-1.5 md:gap-2 text-[10px] md:text-xs font-bold text-slate-500 uppercase tracking-widest'
+  const localeDate = isAr ? arSA : enUS
+  const parseDateValue = (value: string) => {
+    if (!value) return undefined
+    const parsed = parseISO(value)
+    return isValid(parsed) ? parsed : undefined
+  }
 
   return (
     <>
     <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 pt-24 pb-32 md:pt-32 lg:pt-36 lg:pb-12 animate-fade-in-up">
       {/* Back button */}
       <button
-        onClick={() => router.back()}
+        onClick={() => router.push(`/${locale}/trips/${tripId}`)}
         className="group inline-flex items-center gap-2 text-xs md:text-sm font-bold text-slate-500 hover:text-slate-900 mb-6 md:mb-8 transition-colors"
       >
         <div className="p-1.5 md:p-2 rounded-full bg-slate-100 group-hover:bg-slate-200 transition-colors">
@@ -250,51 +270,71 @@ function BookTripContent({ params }: { params: Promise<{ id: string, locale: str
                     <span className="px-2 md:px-3 py-1 rounded-md md:rounded-lg bg-accent/5 border border-accent/10 text-accent text-[10px] md:text-xs font-bold uppercase tracking-widest whitespace-nowrap">
                         {isAr ? CABIN_CLASSES[trip.cabin_class].ar : CABIN_CLASSES[trip.cabin_class].en}
                     </span>
+                    {isRoundTrip && (
+                      <span className="px-2 md:px-3 py-1 rounded-md md:rounded-lg bg-slate-100 border border-slate-200 text-slate-600 text-[10px] md:text-xs font-bold uppercase tracking-widest whitespace-nowrap">
+                        {isAr ? BOOKING_TYPES[resolvedBookingType].ar : BOOKING_TYPES[resolvedBookingType].en}
+                      </span>
+                    )}
                 </div>
              </div>
           </div>
 
-          {/* Booking Type Selector (for round-trip trips) */}
-          {isRoundTrip && (
-            <div className="rounded-[1.5rem] md:rounded-[2rem] border border-slate-200 bg-white p-5 md:p-6 shadow-sm">
-              <h3 className="text-base md:text-lg font-bold text-slate-900 mb-4">
-                {isAr ? 'نوع الحجز' : 'Booking Type'}
-              </h3>
-              <div className="grid grid-cols-2 gap-3">
-                <button
-                  type="button"
-                  onClick={() => setBookingType('round_trip')}
-                  className={cn(
-                    'flex flex-col items-center gap-2 p-4 rounded-xl border-2 transition-all text-center',
-                    bookingType === 'round_trip'
-                      ? 'border-primary bg-primary/5 text-primary'
-                      : 'border-slate-200 text-slate-600 hover:border-slate-300'
-                  )}
-                >
-                  <span className="text-sm font-bold">{isAr ? BOOKING_TYPES.round_trip.ar : BOOKING_TYPES.round_trip.en}</span>
-                  <span className="text-lg font-black">{fmt(trip.price_per_seat)}</span>
-                </button>
-                {trip.price_per_seat_one_way && trip.price_per_seat_one_way > 0 && (
-                  <button
-                    type="button"
-                    onClick={() => setBookingType('one_way')}
-                    className={cn(
-                      'flex flex-col items-center gap-2 p-4 rounded-xl border-2 transition-all text-center',
-                      bookingType === 'one_way'
-                        ? 'border-primary bg-primary/5 text-primary'
-                        : 'border-slate-200 text-slate-600 hover:border-slate-300'
-                    )}
-                  >
-                    <span className="text-sm font-bold">{isAr ? BOOKING_TYPES.one_way.ar : BOOKING_TYPES.one_way.en}</span>
-                    <span className="text-lg font-black">{fmt(trip.price_per_seat_one_way)}</span>
-                  </button>
-                )}
-              </div>
-            </div>
-          )}
-
           {/* Booking form */}
           <form onSubmit={handleSubmit(onSubmit)} className="space-y-6 md:space-y-8" id="booking-form">
+            <div className="rounded-[1.5rem] md:rounded-[2rem] border border-slate-200 bg-white p-6 sm:p-8 shadow-sm">
+              <div className="mb-6 flex items-center gap-2 md:gap-3">
+                <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-primary/10 text-primary">
+                  <Phone className="h-4 w-4" />
+                </div>
+                <div>
+                  <h3 className="text-lg md:text-xl font-black text-slate-900">
+                    {isAr ? 'بيانات التواصل الأساسية' : 'Primary Contact Details'}
+                  </h3>
+                  <p className="text-sm font-medium text-slate-500">
+                    {isAr ? 'تُستخدم للتواصل بخصوص الحجز فقط' : 'Used only for booking communication'}
+                  </p>
+                </div>
+              </div>
+
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-5 md:gap-6">
+                <div className="space-y-1.5 md:space-y-2">
+                  <label className={labelClass}>
+                    <Phone className="h-3.5 w-3.5 md:h-4 md:w-4" />
+                    {isAr ? 'رقم الجوال' : 'Phone Number'}
+                    <span className="text-destructive">*</span>
+                  </label>
+                  <input
+                    {...register('contact.phone')}
+                    type="tel"
+                    dir="ltr"
+                    className={cn(inputClass, 'font-mono font-medium', errors.contact?.phone && errorInputClass)}
+                    placeholder="+966 50 000 0000"
+                  />
+                  {errors.contact?.phone && (
+                    <p className="text-xs font-bold text-destructive mt-1">{errors.contact.phone.message}</p>
+                  )}
+                </div>
+
+                <div className="space-y-1.5 md:space-y-2">
+                  <label className={labelClass}>
+                    <Mail className="h-3.5 w-3.5 md:h-4 md:w-4" />
+                    {isAr ? 'البريد الإلكتروني' : 'Email'}
+                    <span className="text-destructive">*</span>
+                  </label>
+                  <input
+                    {...register('contact.email')}
+                    type="email"
+                    dir="ltr"
+                    className={cn(inputClass, errors.contact?.email && errorInputClass)}
+                    placeholder="user@example.com"
+                  />
+                  {errors.contact?.email && (
+                    <p className="text-xs font-bold text-destructive mt-1">{errors.contact.email.message}</p>
+                  )}
+                </div>
+              </div>
+            </div>
+
             {fields.map((field, index) => (
               <div key={field.id} className="rounded-[1.5rem] md:rounded-[2.5rem] border border-slate-200 bg-white p-6 sm:p-8 md:p-10 shadow-xl shadow-slate-200/40">
                 <div className="flex items-center gap-2 md:gap-3 mb-6 md:mb-8">
@@ -348,12 +388,32 @@ function BookTripContent({ params }: { params: Promise<{ id: string, locale: str
                         {isAr ? 'تاريخ الميلاد' : 'Date of Birth'}
                         <span className="text-destructive">*</span>
                       </label>
-                      <input
-                        {...register(`passengers.${index}.date_of_birth`)}
-                        type="date"
-                        dir="ltr"
-                        className={cn(inputClass, 'font-mono', errors.passengers?.[index]?.date_of_birth && errorInputClass)}
-                      />
+                      <Popover>
+                        <PopoverTrigger
+                          className={cn(
+                            inputClass,
+                            'flex items-center justify-between text-start',
+                            !watch(`passengers.${index}.date_of_birth`) && 'text-slate-400',
+                            errors.passengers?.[index]?.date_of_birth && errorInputClass
+                          )}
+                        >
+                          <span>
+                            {watch(`passengers.${index}.date_of_birth`)
+                              ? format(parseISO(watch(`passengers.${index}.date_of_birth`)), 'PPP', { locale: localeDate })
+                              : (isAr ? 'اختر تاريخ الميلاد' : 'Select date of birth')}
+                          </span>
+                          <CalendarIcon className="h-4 w-4 shrink-0 opacity-50" />
+                        </PopoverTrigger>
+                        <PopoverContent className="w-auto p-0" align="start">
+                          <DateCalendar
+                            mode="single"
+                            selected={parseDateValue(watch(`passengers.${index}.date_of_birth`))}
+                            onSelect={(date) => setValue(`passengers.${index}.date_of_birth`, date ? format(date, 'yyyy-MM-dd') : '', { shouldValidate: true, shouldDirty: true })}
+                            disabled={(date) => date > new Date()}
+                            initialFocus
+                          />
+                        </PopoverContent>
+                      </Popover>
                       {errors.passengers?.[index]?.date_of_birth && (
                         <p className="text-xs font-bold text-destructive mt-1">{errors.passengers[index].date_of_birth.message}</p>
                       )}
@@ -384,52 +444,33 @@ function BookTripContent({ params }: { params: Promise<{ id: string, locale: str
                         {isAr ? 'تاريخ انتهاء الإثبات' : 'ID Expiry Date'}
                         <span className="text-destructive">*</span>
                       </label>
-                      <input
-                        {...register(`passengers.${index}.id_expiry_date`)}
-                        type="date"
-                        dir="ltr"
-                        className={cn(inputClass, 'font-mono', errors.passengers?.[index]?.id_expiry_date && errorInputClass)}
-                      />
+                      <Popover>
+                        <PopoverTrigger
+                          className={cn(
+                            inputClass,
+                            'flex items-center justify-between text-start',
+                            !watch(`passengers.${index}.id_expiry_date`) && 'text-slate-400',
+                            errors.passengers?.[index]?.id_expiry_date && errorInputClass
+                          )}
+                        >
+                          <span>
+                            {watch(`passengers.${index}.id_expiry_date`)
+                              ? format(parseISO(watch(`passengers.${index}.id_expiry_date`)), 'PPP', { locale: localeDate })
+                              : (isAr ? 'اختر تاريخ الانتهاء' : 'Select expiry date')}
+                          </span>
+                          <CalendarIcon className="h-4 w-4 shrink-0 opacity-50" />
+                        </PopoverTrigger>
+                        <PopoverContent className="w-auto p-0" align="start">
+                          <DateCalendar
+                            mode="single"
+                            selected={parseDateValue(watch(`passengers.${index}.id_expiry_date`))}
+                            onSelect={(date) => setValue(`passengers.${index}.id_expiry_date`, date ? format(date, 'yyyy-MM-dd') : '', { shouldValidate: true, shouldDirty: true })}
+                            initialFocus
+                          />
+                        </PopoverContent>
+                      </Popover>
                       {errors.passengers?.[index]?.id_expiry_date && (
                         <p className="text-xs font-bold text-destructive mt-1">{errors.passengers[index].id_expiry_date.message}</p>
-                      )}
-                    </div>
-
-                    {/* Phone */}
-                    <div className="space-y-1.5 md:space-y-2">
-                      <label className={labelClass}>
-                        <Phone className="h-3.5 w-3.5 md:h-4 md:w-4" />
-                        {isAr ? 'رقم الجوال' : 'Phone Number'}
-                        <span className="text-destructive">*</span>
-                      </label>
-                      <input
-                        {...register(`passengers.${index}.phone`)}
-                        type="tel"
-                        dir="ltr"
-                        className={cn(inputClass, 'font-mono font-medium', errors.passengers?.[index]?.phone && errorInputClass)}
-                        placeholder="+966 50 000 0000"
-                      />
-                      {errors.passengers?.[index]?.phone && (
-                        <p className="text-xs font-bold text-destructive mt-1">{errors.passengers[index].phone.message}</p>
-                      )}
-                    </div>
-
-                    {/* Email */}
-                    <div className="space-y-1.5 md:space-y-2 md:col-span-2">
-                      <label className={labelClass}>
-                        <Mail className="h-3.5 w-3.5 md:h-4 md:w-4" />
-                        {isAr ? 'البريد الإلكتروني' : 'Email'}
-                        <span className="text-destructive">*</span>
-                      </label>
-                      <input
-                        {...register(`passengers.${index}.email`)}
-                        type="email"
-                        dir="ltr"
-                        className={cn(inputClass, errors.passengers?.[index]?.email && errorInputClass)}
-                        placeholder="user@example.com"
-                      />
-                      {errors.passengers?.[index]?.email && (
-                        <p className="text-xs font-bold text-destructive mt-1">{errors.passengers[index].email.message}</p>
                       )}
                     </div>
                 </div>

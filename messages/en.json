@@ -57,6 +57,7 @@
   },
   "nav": {
     "browse_trips": "Browse Trips",
+    "browse_rooms": "Browse Rooms",
     "become_provider": "Become a Provider",
     "my_bookings": "My Bookings",
     "provider_dashboard": "Provider Dashboard",
@@ -233,7 +234,14 @@
     "listing_seats": "Seats",
     "listing_trip": "Full Trip",
     "listing_seats_desc": "Sell individual seats on a flight",
-    "listing_trip_desc": "Sell a complete trip package"
+    "listing_trip_desc": "Sell a complete trip package",
+    "my_rooms": "My Rooms",
+    "room_bookings": "Room Bookings",
+    "new_room": "New Room",
+    "post_room": "Post a Room",
+    "active_rooms": "Active Rooms",
+    "no_rooms_yet": "You haven't posted any rooms yet.",
+    "post_first_room": "Post Your First Room"
   },
   "become_provider": {
     "title": "Become a Provider",
@@ -307,7 +315,9 @@
     "booking_count": "Total Bookings",
     "avg_value": "Average Booking Value",
     "top_providers": "Top Providers",
-    "top_routes": "Top Routes"
+    "top_routes": "Top Routes",
+    "rooms": "Rooms",
+    "room_bookings": "Room Bookings"
   },
   "status": {
     "active": "Active",
@@ -394,7 +404,12 @@
     "passenger_phone_required": "Phone number is required",
     "passenger_email_invalid": "Invalid email address",
     "passwords_mismatch": "Passwords do not match",
-    "new_password_min": "New password must be at least 6 characters"
+    "new_password_min": "New password must be at least 6 characters",
+    "room_name_required": "Room name is required",
+    "city_required": "City is required",
+    "category_required": "Category is required",
+    "checkin_required": "Check-in date is required",
+    "days_required": "Number of days is required"
   },
   "profile": {
     "title": "My Profile",
@@ -410,6 +425,59 @@
     "go_to_dashboard": "Go to Dashboard",
     "role_buyer": "Buyer",
     "role_admin": "Administrator"
+  },
+  "rooms": {
+    "title": "Rooms",
+    "browse_title": "Browse Available Rooms",
+    "detail_title": "Room Details",
+    "search_placeholder": "Search by city, name, or category...",
+    "filter_city": "City",
+    "filter_category": "Category",
+    "filter_price": "Price Range",
+    "filter_capacity": "Capacity",
+    "sort_price_asc": "Price: Low to High",
+    "sort_price_desc": "Price: High to Low",
+    "sort_newest": "Newest First",
+    "name": "Room Name",
+    "city": "City",
+    "address": "Address",
+    "category": "Category",
+    "price_per_night": "Price Per Night",
+    "max_capacity": "Max Capacity",
+    "amenities": "Amenities",
+    "images": "Images",
+    "instant_book": "Instant Book",
+    "available_dates": "Available Dates",
+    "always_available": "Always Available",
+    "available_from": "Available From",
+    "available_to": "Available To",
+    "no_rooms": "No rooms available at the moment. Please check back later.",
+    "book_now": "Book Now",
+    "not_available": "Not Available",
+    "guests": "Guests",
+    "per_night": "Per Night",
+    "nights": "Nights",
+    "rooms_count": "Number of Rooms",
+    "recommended_rooms": "Recommended Rooms at Destination",
+    "recommended_rooms_desc": "Available rooms in {city}",
+    "view_all_rooms": "View All Rooms",
+    "featured_rooms": "Featured Rooms"
+  },
+  "room_booking": {
+    "title": "Book Your Room",
+    "guest_name": "Guest Name",
+    "guest_phone": "Guest Phone",
+    "guest_email": "Guest Email",
+    "check_in_date": "Check-in Date",
+    "number_of_days": "Number of Days",
+    "number_of_people": "Number of Guests",
+    "rooms_count": "Number of Rooms",
+    "price_summary": "Price Summary",
+    "total_amount": "Total Amount",
+    "proceed_to_payment": "Confirm Booking",
+    "my_room_bookings_title": "My Room Bookings",
+    "no_room_bookings": "You have no room bookings yet.",
+    "booking_detail": "Room Booking Details"
   },
   "footer": {
     "about": "About BookitFly",

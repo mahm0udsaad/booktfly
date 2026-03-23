@@ -6,6 +6,7 @@ import { useLocale, useTranslations } from 'next-intl'
 import {
   LayoutDashboard,
   Plane,
+  BedDouble,
   BookOpen,
   DollarSign,
   User,
@@ -23,7 +24,9 @@ import { LanguageSwitcher } from '@/components/layout/language-switcher'
 const NAV_ITEMS = [
   { key: 'dashboard', icon: LayoutDashboard, href: '/provider/dashboard' },
   { key: 'my_trips', icon: Plane, href: '/provider/trips' },
+  { key: 'my_rooms', icon: BedDouble, href: '/provider/rooms' },
   { key: 'bookings', icon: BookOpen, href: '/provider/bookings' },
+  { key: 'room_bookings', icon: BookOpen, href: '/provider/room-bookings' },
   { key: 'revenue', icon: DollarSign, href: '/provider/revenue' },
   { key: 'profile', icon: User, href: '/provider/profile' },
 ]

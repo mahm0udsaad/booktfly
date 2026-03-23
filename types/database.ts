@@ -16,14 +16,14 @@ export type Passenger = {
   date_of_birth: string
   id_number: string
   id_expiry_date: string
-  phone: string
-  email: string
 }
 
 export type TripEditRequestStatus = 'pending' | 'approved' | 'rejected'
 
 export type WalletTransactionType = 'credit' | 'debit' | 'withdrawal'
 export type WithdrawalStatus = 'pending' | 'approved' | 'rejected' | 'completed'
+
+export type RoomStatus = 'active' | 'deactivated' | 'removed'
 
 export type NotificationType =
   | 'application_approved'
@@ -48,6 +48,12 @@ export type NotificationType =
   | 'withdrawal_requested'
   | 'withdrawal_approved'
   | 'withdrawal_rejected'
+  | 'new_room_booking'
+  | 'room_booking_confirmed'
+  | 'room_booking_rejected'
+  | 'room_booking_cancelled'
+  | 'room_booking_refunded'
+  | 'room_removed'
 
 export type Profile = {
   id: string
@@ -238,6 +244,70 @@ export type WithdrawalRequest = {
   reviewed_at: string | null
   reviewed_by: string | null
   provider?: Provider
+}
+
+export type Room = {
+  id: string
+  provider_id: string
+  name_ar: string
+  name_en: string | null
+  description_ar: string | null
+  description_en: string | null
+  city_ar: string
+  city_en: string | null
+  address_ar: string | null
+  address_en: string | null
+  category: string
+  price_per_night: number
+  currency: Currency
+  max_capacity: number
+  amenities: string[]
+  images: string[]
+  instant_book: boolean
+  available_from: string | null
+  available_to: string | null
+  status: RoomStatus
+  removed_reason: string | null
+  removed_by: string | null
+  created_at: string
+  updated_at: string
+  provider?: Provider
+}
+
+export type RoomBooking = {
+  id: string
+  room_id: string
+  buyer_id: string | null
+  provider_id: string
+  guest_name: string
+  guest_phone: string | null
+  guest_email: string | null
+  check_in_date: string
+  number_of_days: number
+  number_of_people: number
+  rooms_count: number
+  price_per_night: number
+  total_amount: number
+  commission_rate: number
+  commission_amount: number
+  provider_payout: number
+  status: BookingStatus
+  transfer_receipt_url: string | null
+  transfer_confirmed_at: string | null
+  payment_reviewed_by: string | null
+  payment_reviewed_at: string | null
+  payment_rejection_reason: string | null
+  paid_at: string | null
+  refunded_at: string | null
+  refunded_by: string | null
+  cancelled_at: string | null
+  cancelled_by: string | null
+  admin_notes: string | null
+  created_at: string
+  updated_at: string
+  room?: Room
+  provider?: Provider
+  buyer?: Profile
 }
 
 export type PlatformSettings = {

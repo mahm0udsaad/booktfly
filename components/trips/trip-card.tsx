@@ -1,8 +1,8 @@
 import Link from 'next/link'
 import { useLocale, useTranslations } from 'next-intl'
 import { Plane, Calendar, Clock, ArrowRight, ArrowLeft, Building2 } from 'lucide-react'
-import { cn, formatPrice, formatPriceEN } from '@/lib/utils'
-import { TRIP_TYPES, CABIN_CLASSES } from '@/lib/constants'
+import { capitalizeFirst, cn, formatPrice, formatPriceEN } from '@/lib/utils'
+import { CABIN_CLASSES } from '@/lib/constants'
 import { TripStatusBadge } from './trip-status-badge'
 import { SeatsIndicator } from './seats-indicator'
 import { getCountryCode } from '@/lib/countries'
@@ -18,9 +18,8 @@ export function TripCard({ trip, className }: TripCardProps) {
   const locale = useLocale()
   const isAr = locale === 'ar'
 
-  const originCity = isAr ? trip.origin_city_ar : (trip.origin_city_en || trip.origin_city_ar)
-  const destCity = isAr ? trip.destination_city_ar : (trip.destination_city_en || trip.destination_city_ar)
-  const tripType = TRIP_TYPES[trip.trip_type]
+  const originCity = isAr ? trip.origin_city_ar : capitalizeFirst(trip.origin_city_en || trip.origin_city_ar)
+  const destCity = isAr ? trip.destination_city_ar : capitalizeFirst(trip.destination_city_en || trip.destination_city_ar)
   const cabinClass = CABIN_CLASSES[trip.cabin_class]
   const formattedPrice = isAr ? formatPrice(trip.price_per_seat, trip.currency) : formatPriceEN(trip.price_per_seat, trip.currency)
 
@@ -72,42 +71,42 @@ export function TripCard({ trip, className }: TripCardProps) {
           </div>
 
           {/* Route Section */}
-          <div className="flex items-center justify-between mb-6">
-            <div className="flex flex-col flex-1 min-w-0">
-              <span className="text-2xl md:text-3xl font-black text-slate-900 tracking-tight truncate">{originCity}</span>
+          <div className="grid grid-cols-[minmax(0,1fr)_72px_minmax(0,1fr)] md:grid-cols-[minmax(0,1fr)_84px_minmax(0,1fr)] items-center gap-3 mb-6">
+            <div className="min-w-0">
+              <p className="font-black text-slate-900 sm:text-2xl">
+                {originCity}
+              </p>
               <div className="flex items-center gap-1.5 mt-1">
                 {originCountry && (
                   <img src={`https://flagcdn.com/w20/${originCountry}.png`} alt={originCountry} className="h-3 w-4 rounded-sm object-cover shadow-sm" />
                 )}
-                <span className="text-xs font-bold text-slate-400">{trip.origin_code}</span>
+                <span className="text-xs font-bold text-slate-400">{trip.origin_code?.toUpperCase()}</span>
               </div>
             </div>
             
-            {/* Visual flight path */}
-            <div className="flex flex-col items-center justify-center px-2 md:px-4 w-[100px] shrink-0">
-               <div className="flex items-center w-full gap-1.5 opacity-50 group-hover:opacity-100 transition-opacity">
-                  <div className="h-[2px] flex-1 bg-slate-200 rounded-full" />
-                  <Plane className="h-3.5 w-3.5 text-primary rtl:rotate-180 shrink-0" />
-                  <div className="h-[2px] flex-1 bg-slate-200 rounded-full" />
-               </div>
-               <span className="text-[9px] md:text-[10px] font-bold text-slate-400 uppercase tracking-widest bg-slate-50 px-2 py-0.5 rounded-full border border-slate-100 mt-1.5 whitespace-nowrap">
-                  {isAr ? tripType.ar : tripType.en}
-               </span>
+            <div className="flex items-center justify-center opacity-50 group-hover:opacity-100 transition-opacity">
+              <div className="flex items-center w-full gap-1.5">
+                <div className="h-[2px] flex-1 bg-slate-200 rounded-full" />
+                <Plane className="h-3.5 w-3.5 text-primary rtl:rotate-180 shrink-0" />
+                <div className="h-[2px] flex-1 bg-slate-200 rounded-full" />
+              </div>
             </div>
 
-            <div className="flex flex-col flex-1 text-end min-w-0 items-end">
-              <span className="text-2xl md:text-3xl font-black text-slate-900 tracking-tight truncate w-full">{destCity}</span>
-              <div className="flex items-center gap-1.5 mt-1">
+            <div className="min-w-0 text-end">
+              <p className="font-black text-slate-900 sm:text-2xl">
+                {destCity}
+              </p>
+              <div className="flex items-center justify-end gap-1.5 mt-1">
                 {destCountry && (
                   <img src={`https://flagcdn.com/w20/${destCountry}.png`} alt={destCountry} className="h-3 w-4 rounded-sm object-cover shadow-sm" />
                 )}
-                <span className="text-xs font-bold text-slate-400">{trip.destination_code}</span>
+                <span className="text-xs font-bold text-slate-400">{trip.destination_code?.toUpperCase()}</span>
               </div>
             </div>
           </div>
 
           {/* Meta Information Pills */}
-          <div className="flex flex-wrap items-center gap-2 mb-6">
+          <div className="grid grid-cols-2 items-center gap-2 mb-6">
              <div className="flex items-center gap-1.5 bg-slate-50 px-2.5 py-1.5 rounded-lg border border-slate-100 text-slate-600">
                 <Calendar className="h-3.5 w-3.5 text-slate-400" />
                 <span className="text-xs font-semibold">{departureDate}</span>
@@ -116,12 +115,6 @@ export function TripCard({ trip, className }: TripCardProps) {
                 <Clock className="h-3.5 w-3.5 text-slate-400" />
                 <span className="text-xs font-semibold">{departureTime}</span>
              </div>
-             {providerName && (
-               <div className="flex items-center gap-1.5 bg-slate-50 px-2.5 py-1.5 rounded-lg border border-slate-100 text-slate-600 ml-auto rtl:ml-0 rtl:mr-auto min-w-0 max-w-[40%]">
-                  <Building2 className="h-3.5 w-3.5 text-slate-400 shrink-0" />
-                  <span className="text-xs font-semibold truncate">{providerName}</span>
-               </div>
-             )}
           </div>
 
           <div className="mt-auto">
@@ -140,15 +133,10 @@ export function TripCard({ trip, className }: TripCardProps) {
                <div className="flex flex-col">
                  <span className="text-[10px] font-bold text-slate-400 uppercase tracking-widest mb-1">{t('common.per_seat')}</span>
                  <span className="text-2xl font-black text-slate-900 leading-none">{formattedPrice}</span>
-                 {trip.trip_type === 'round_trip' && trip.price_per_seat_one_way && trip.price_per_seat_one_way > 0 && (
-                   <span className="text-xs font-bold text-accent mt-1">
-                     {isAr ? 'ذهاب فقط: ' : 'One-way: '}{isAr ? formatPrice(trip.price_per_seat_one_way, trip.currency) : formatPriceEN(trip.price_per_seat_one_way, trip.currency)}
-                   </span>
-                 )}
                </div>
                
-               <div className="h-10 w-10 rounded-full bg-slate-50 text-slate-400 flex items-center justify-center group-hover:bg-primary group-hover:text-white transition-all duration-300 shadow-sm group-hover:shadow-md group-hover:shadow-primary/20 ltr:group-hover:translate-x-1 rtl:group-hover:-translate-x-1 shrink-0">
-                 <Arrow className="h-4 w-4 rtl:rotate-180" />
+               <div className="h-10 w-10 rounded-full bg-slate-200 text-slate-400 flex items-center justify-center group-hover:bg-blue-800 group-hover:text-white transition-all duration-300 shadow-sm group-hover:shadow-md group-hover:shadow-primary/20 ltr:group-hover:translate-x-1 rtl:group-hover:-translate-x-1 shrink-0">
+                 <Arrow className="h-4 w-4 rtl:rotate-180 text-orange-200" />
                </div>
              </div>
           </div>

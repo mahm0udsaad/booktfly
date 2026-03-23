@@ -163,9 +163,9 @@ export default async function ProviderDashboardPage() {
                       {booking.passenger_name}
                     </p>
                     <div className="flex items-center gap-2 text-sm font-medium text-slate-500 truncate">
-                      <span className="font-bold text-slate-700">{booking.trip?.origin_code}</span>
+                      <span className="font-bold text-slate-700">{booking.trip?.origin_code?.toUpperCase()}</span>
                       <ArrowRight className="h-3 w-3 rtl:rotate-180 text-slate-300" />
-                      <span className="font-bold text-slate-700">{booking.trip?.destination_code}</span>
+                      <span className="font-bold text-slate-700">{booking.trip?.destination_code?.toUpperCase()}</span>
                       <span className="px-2 py-0.5 rounded bg-slate-100 text-xs ml-2">
                          {booking.seats_count} {tc('seats')}
                       </span>

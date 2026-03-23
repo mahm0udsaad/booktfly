@@ -57,6 +57,7 @@
   },
   "nav": {
     "browse_trips": "تصفح الرحلات",
+    "browse_rooms": "تصفح الغرف",
     "become_provider": "كن مزود خدمة",
     "my_bookings": "حجوزاتي",
     "provider_dashboard": "لوحة تحكم المزود",
@@ -233,7 +234,14 @@
     "listing_seats": "مقاعد",
     "listing_trip": "رحلة كاملة",
     "listing_seats_desc": "بيع مقاعد فردية على رحلة طيران",
-    "listing_trip_desc": "بيع رحلة كاملة كحزمة"
+    "listing_trip_desc": "بيع رحلة كاملة كحزمة",
+    "my_rooms": "غرفي",
+    "room_bookings": "حجوزات الغرف",
+    "new_room": "غرفة جديدة",
+    "post_room": "إضافة غرفة",
+    "active_rooms": "الغرف النشطة",
+    "no_rooms_yet": "لم تقم بإضافة أي غرف بعد",
+    "post_first_room": "أضف غرفتك الأولى"
   },
   "become_provider": {
     "title": "انضم كمزود خدمة",
@@ -307,7 +315,9 @@
     "booking_count": "عدد الحجوزات",
     "avg_value": "متوسط قيمة الحجز",
     "top_providers": "أفضل مزودي الخدمة",
-    "top_routes": "أكثر الوجهات طلباً"
+    "top_routes": "أكثر الوجهات طلباً",
+    "rooms": "الغرف",
+    "room_bookings": "حجوزات الغرف"
   },
   "status": {
     "active": "نشطة",
@@ -394,7 +404,12 @@
     "passenger_phone_required": "رقم الهاتف مطلوب",
     "passenger_email_invalid": "البريد الإلكتروني غير صالح",
     "passwords_mismatch": "كلمتا المرور غير متطابقتين",
-    "new_password_min": "كلمة المرور الجديدة يجب أن تكون 6 أحرف على الأقل"
+    "new_password_min": "كلمة المرور الجديدة يجب أن تكون 6 أحرف على الأقل",
+    "room_name_required": "اسم الغرفة مطلوب",
+    "city_required": "المدينة مطلوبة",
+    "category_required": "التصنيف مطلوب",
+    "checkin_required": "تاريخ الدخول مطلوب",
+    "days_required": "عدد الأيام مطلوب"
   },
   "profile": {
     "title": "ملفي الشخصي",
@@ -410,6 +425,59 @@
     "go_to_dashboard": "الذهاب إلى لوحة التحكم",
     "role_buyer": "مسافر",
     "role_admin": "مدير النظام"
+  },
+  "rooms": {
+    "title": "الغرف",
+    "browse_title": "تصفح الغرف المتاحة",
+    "detail_title": "تفاصيل الغرفة",
+    "search_placeholder": "ابحث بالمدينة أو الاسم أو التصنيف...",
+    "filter_city": "المدينة",
+    "filter_category": "التصنيف",
+    "filter_price": "نطاق السعر",
+    "filter_capacity": "السعة",
+    "sort_price_asc": "السعر: من الأقل إلى الأعلى",
+    "sort_price_desc": "السعر: من الأعلى إلى الأقل",
+    "sort_newest": "الأحدث أولاً",
+    "name": "اسم الغرفة",
+    "city": "المدينة",
+    "address": "العنوان",
+    "category": "التصنيف",
+    "price_per_night": "السعر لكل ليلة",
+    "max_capacity": "السعة القصوى",
+    "amenities": "المرافق",
+    "images": "الصور",
+    "instant_book": "حجز فوري",
+    "available_dates": "التواريخ المتاحة",
+    "always_available": "متاح دائماً",
+    "available_from": "متاح من",
+    "available_to": "متاح إلى",
+    "no_rooms": "لا توجد غرف متاحة حالياً. يرجى التحقق لاحقاً.",
+    "book_now": "احجز الآن",
+    "not_available": "غير متاحة",
+    "guests": "ضيوف",
+    "per_night": "لكل ليلة",
+    "nights": "ليالي",
+    "rooms_count": "عدد الغرف",
+    "recommended_rooms": "غرف مقترحة في الوجهة",
+    "recommended_rooms_desc": "غرف متاحة في {city}",
+    "view_all_rooms": "عرض جميع الغرف",
+    "featured_rooms": "غرف مميزة"
+  },
+  "room_booking": {
+    "title": "حجز الغرفة",
+    "guest_name": "اسم الضيف",
+    "guest_phone": "رقم جوال الضيف",
+    "guest_email": "بريد الضيف الإلكتروني",
+    "check_in_date": "تاريخ الدخول",
+    "number_of_days": "عدد الأيام",
+    "number_of_people": "عدد الأشخاص",
+    "rooms_count": "عدد الغرف",
+    "price_summary": "ملخص الأسعار",
+    "total_amount": "المبلغ الإجمالي",
+    "proceed_to_payment": "تأكيد الحجز",
+    "my_room_bookings_title": "حجوزات غرفي",
+    "no_room_bookings": "لا توجد لديك حجوزات غرف بعد.",
+    "booking_detail": "تفاصيل حجز الغرفة"
   },
   "footer": {
     "about": "عن BookitFly",

@@ -24,10 +24,10 @@ import {
   Loader2,
   Landmark,
 } from 'lucide-react'
-import { cn, formatPrice, formatPriceEN, shortId } from '@/lib/utils'
+import { capitalizeFirst, cn, formatPrice, formatPriceEN, shortId } from '@/lib/utils'
 import { TRIP_TYPES, CABIN_CLASSES, PROVIDER_TYPES } from '@/lib/constants'
 import { BookingStatusBadge } from '@/components/bookings/booking-status-badge'
-import { DetailPageSkeleton } from '@/components/shared/loading-skeleton'
+import { BookingDetailPageSkeleton } from '@/components/shared/loading-skeleton'
 import type { Booking } from '@/types'
 
 export default function BookingDetailPage() {
@@ -62,7 +62,7 @@ export default function BookingDetailPage() {
     fetchBooking()
   }, [bookingId])
 
-  if (loading) return <DetailPageSkeleton />
+  if (loading) return <BookingDetailPageSkeleton />
 
   if (!booking) {
     return (
@@ -70,7 +70,7 @@ export default function BookingDetailPage() {
         <AlertTriangle className="h-12 w-12 text-warning mx-auto mb-4" />
         <h2 className="text-xl font-semibold mb-2">{t('errors.not_found')}</h2>
         <button
-          onClick={() => router.back()}
+          onClick={() => router.push(`/${locale}/my-bookings`)}
           className="text-accent hover:underline text-sm mt-2"
         >
           {t('common.back')}
@@ -86,12 +86,12 @@ export default function BookingDetailPage() {
   const originCity = trip
     ? isAr
       ? trip.origin_city_ar
-      : (trip.origin_city_en || trip.origin_city_ar)
+      : capitalizeFirst(trip.origin_city_en || trip.origin_city_ar)
     : ''
   const destCity = trip
     ? isAr
       ? trip.destination_city_ar
-      : (trip.destination_city_en || trip.destination_city_ar)
+      : capitalizeFirst(trip.destination_city_en || trip.destination_city_ar)
     : ''
 
   const departureDate = trip
@@ -123,7 +123,7 @@ export default function BookingDetailPage() {
     <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
       {/* Back button */}
       <button
-        onClick={() => router.back()}
+        onClick={() => router.push(`/${locale}/my-bookings`)}
         className="flex items-center gap-1 text-sm text-muted-foreground hover:text-foreground mb-6 transition-colors"
       >
         <Back className="h-4 w-4" />
@@ -161,7 +161,7 @@ export default function BookingDetailPage() {
                 </div>
                 <p className="text-lg font-bold">{originCity}</p>
                 {trip.origin_code && (
-                  <span className="text-xs text-muted-foreground">{trip.origin_code}</span>
+                  <span className="text-xs text-muted-foreground">{trip.origin_code?.toUpperCase()}</span>
                 )}
               </div>
               <Arrow className="h-5 w-5 text-accent shrink-0" />
@@ -172,7 +172,7 @@ export default function BookingDetailPage() {
                 </div>
                 <p className="text-lg font-bold">{destCity}</p>
                 {trip.destination_code && (
-                  <span className="text-xs text-muted-foreground">{trip.destination_code}</span>
+                  <span className="text-xs text-muted-foreground">{trip.destination_code?.toUpperCase()}</span>
                 )}
               </div>
             </div>
@@ -222,27 +222,27 @@ export default function BookingDetailPage() {
         <div className="rounded-xl border bg-card p-6">
           <h3 className="font-semibold text-foreground mb-4 flex items-center gap-2">
             <User className="h-4 w-4 text-accent" />
-            {t('booking.passenger_details')}
+            {isAr ? 'بيانات التواصل الأساسية' : 'Primary Contact'}
           </h3>
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
             <div className="flex items-center gap-3">
               <User className="h-4 w-4 text-muted-foreground shrink-0" />
               <div>
-                <span className="text-xs text-muted-foreground">{t('booking.passenger_name')}</span>
+                <span className="text-xs text-muted-foreground">{isAr ? 'اسم جهة التواصل' : 'Contact name'}</span>
                 <p className="text-sm font-medium">{booking.passenger_name}</p>
               </div>
             </div>
             <div className="flex items-center gap-3">
               <Phone className="h-4 w-4 text-muted-foreground shrink-0" />
               <div>
-                <span className="text-xs text-muted-foreground">{t('booking.passenger_phone')}</span>
+                <span className="text-xs text-muted-foreground">{isAr ? 'رقم الجوال' : 'Phone number'}</span>
                 <p className="text-sm font-medium" dir="ltr">{booking.passenger_phone}</p>
               </div>
             </div>
             <div className="flex items-center gap-3">
               <Mail className="h-4 w-4 text-muted-foreground shrink-0" />
               <div>
-                <span className="text-xs text-muted-foreground">{t('booking.passenger_email')}</span>
+                <span className="text-xs text-muted-foreground">{isAr ? 'البريد الإلكتروني' : 'Email'}</span>
                 <p className="text-sm font-medium" dir="ltr">{booking.passenger_email}</p>
               </div>
             </div>
@@ -292,14 +292,6 @@ export default function BookingDetailPage() {
                   <div>
                     <span className="text-xs text-muted-foreground">{isAr ? 'تاريخ انتهاء الإثبات' : 'ID Expiry Date'}</span>
                     <p className="text-sm font-medium" dir="ltr">{p.id_expiry_date}</p>
-                  </div>
-                  <div>
-                    <span className="text-xs text-muted-foreground">{isAr ? 'رقم الجوال' : 'Phone'}</span>
-                    <p className="text-sm font-medium" dir="ltr">{p.phone}</p>
-                  </div>
-                  <div>
-                    <span className="text-xs text-muted-foreground">{isAr ? 'البريد الإلكتروني' : 'Email'}</span>
-                    <p className="text-sm font-medium" dir="ltr">{p.email}</p>
                   </div>
                 </div>
               ))}

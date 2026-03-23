@@ -53,10 +53,10 @@ export function getTripSchema(locale: Locale = 'ar') {
     flight_number: z.string().optional(),
     origin_city_ar: z.string().min(1, v(locale, 'origin_required')),
     origin_city_en: z.string().optional(),
-    origin_code: z.string().optional(),
+    origin_code: z.string().optional().transform(v => v?.toUpperCase()),
     destination_city_ar: z.string().min(1, v(locale, 'destination_required')),
     destination_city_en: z.string().optional(),
-    destination_code: z.string().optional(),
+    destination_code: z.string().optional().transform(v => v?.toUpperCase()),
     departure_at: z.string().min(1, v(locale, 'departure_required')),
     return_at: z.string().optional(),
     trip_type: z.enum(['one_way', 'round_trip']),
@@ -76,6 +76,9 @@ export const passengerSchema = z.object({
   date_of_birth: z.string().min(1, 'Date of birth is required'),
   id_number: z.string().min(4, 'ID/Passport number is required'),
   id_expiry_date: z.string().min(1, 'ID expiry date is required'),
+})
+
+export const bookingContactSchema = z.object({
   phone: z.string().min(9, 'Phone number is required'),
   email: z.string().email('Invalid email'),
 })
@@ -84,6 +87,7 @@ export function getBookingSchema(locale: Locale = 'ar') {
   return z.object({
     trip_id: z.string().uuid(),
     seats_count: z.number().min(1).max(10),
+    contact: bookingContactSchema,
     passengers: z.array(passengerSchema).min(1),
   })
 }
@@ -109,6 +113,40 @@ export const platformSettingsSchema = z.object({
   terms_content_en: z.string().optional(),
 })
 
+export function getRoomSchema(locale: Locale = 'ar') {
+  return z.object({
+    name_ar: z.string().min(2, v(locale, 'room_name_required')),
+    name_en: z.string().optional(),
+    description_ar: z.string().optional(),
+    description_en: z.string().optional(),
+    city_ar: z.string().min(1, v(locale, 'city_required')),
+    city_en: z.string().optional(),
+    address_ar: z.string().optional(),
+    address_en: z.string().optional(),
+    category: z.string().min(1, v(locale, 'category_required')),
+    price_per_night: z.number().min(1, v(locale, 'price_required')),
+    currency: z.enum(['SAR', 'USD']),
+    max_capacity: z.number().min(1),
+    amenities: z.array(z.string()).optional(),
+    instant_book: z.boolean(),
+    available_from: z.string().optional(),
+    available_to: z.string().optional(),
+  })
+}
+
+export function getRoomBookingSchema(locale: Locale = 'ar') {
+  return z.object({
+    room_id: z.string().uuid(),
+    guest_name: z.string().min(2, v(locale, 'name_required')),
+    guest_phone: z.string().optional(),
+    guest_email: z.string().email(v(locale, 'email_invalid')).optional(),
+    check_in_date: z.string().min(1, v(locale, 'checkin_required')),
+    number_of_days: z.number().min(1, v(locale, 'days_required')),
+    number_of_people: z.number().min(1),
+    rooms_count: z.number().min(1).max(10),
+  })
+}
+
 // Default Arabic schemas for backward compatibility (used in API routes)
 export const signupSchema = getSignupSchema('ar')
 export const loginSchema = getLoginSchema('ar')
@@ -117,3 +155,5 @@ export const providerApplicationSchema = getProviderApplicationSchema('ar')
 export const tripSchema = getTripSchema('ar')
 export const bookingSchema = getBookingSchema('ar')
 export const updatePasswordSchema = getUpdatePasswordSchema('ar')
+export const roomSchema = getRoomSchema('ar')
+export const roomBookingSchema = getRoomBookingSchema('ar')

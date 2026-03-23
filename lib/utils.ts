@@ -35,3 +35,8 @@ export function getInitials(name: string): string {
 export function shortId(uuid: string): string {
   return uuid.slice(0, 8).toUpperCase()
 }
+
+export function capitalizeFirst(value: string): string {
+  if (!value) return value
+  return value.charAt(0).toUpperCase() + value.slice(1)
+}
