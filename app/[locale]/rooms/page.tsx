@@ -2,6 +2,8 @@
 
 import { useEffect, useState, useCallback, useRef, Suspense } from 'react'
 import { useLocale, useTranslations } from 'next-intl'
+import { format, isValid, parseISO } from 'date-fns'
+import { arSA, enUS } from 'date-fns/locale'
 import {
   Search,
   SlidersHorizontal,
@@ -9,6 +11,11 @@ import {
   BedDouble,
   ChevronDown,
   Loader2,
+  CalendarDays,
+  Moon,
+  Users,
+  DoorOpen,
+  ArrowUpDown,
 } from 'lucide-react'
 import { cn } from '@/lib/utils'
 import { RoomCard } from '@/components/rooms/room-card'
@@ -17,6 +24,12 @@ import { CardSkeleton } from '@/components/shared/loading-skeleton'
 import { ROOM_CATEGORIES } from '@/lib/constants'
 import type { Room } from '@/types'
 import { useSearchParams } from 'next/navigation'
+import { Input } from '@/components/ui/input'
+import { Button } from '@/components/ui/button'
+import { Label } from '@/components/ui/label'
+import { Badge } from '@/components/ui/badge'
+import { Calendar } from '@/components/ui/calendar'
+import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover'
 
 type Filters = {
   city: string
@@ -24,6 +37,10 @@ type Filters = {
   price_min: string
   price_max: string
   capacity_min: string
+  check_in: string
+  days: string
+  rooms_count: string
+  passengers: string
   sort: string
 }
 
@@ -33,6 +50,10 @@ const initialFilters: Filters = {
   price_min: '',
   price_max: '',
   capacity_min: '',
+  check_in: '',
+  days: '',
+  rooms_count: '',
+  passengers: '',
   sort: 'newest',
 }
 
@@ -56,6 +77,8 @@ function RoomsContent() {
 
   const [showFilters, setShowFilters] = useState(false)
   const [searchCity, setSearchCity] = useState(filters.city)
+  const checkInDate = filters.check_in ? parseISO(filters.check_in) : undefined
+  const validCheckInDate = checkInDate && isValid(checkInDate) ? checkInDate : undefined
 
   const fetchRooms = useCallback(
     async (pageNum: number, append = false, overrideCity?: string) => {
@@ -72,7 +95,10 @@ function RoomsContent() {
         if (filters.category) params.set('category', filters.category)
         if (filters.price_min) params.set('price_min', filters.price_min)
         if (filters.price_max) params.set('price_max', filters.price_max)
-        if (filters.capacity_min) params.set('capacity_min', filters.capacity_min)
+        const capacityMin = filters.passengers || filters.capacity_min
+        if (capacityMin) params.set('capacity_min', capacityMin)
+        if (filters.check_in) params.set('check_in', filters.check_in)
+        if (filters.days) params.set('days', filters.days)
         if (filters.sort) params.set('sort', filters.sort)
 
         const res = await fetch(`/api/rooms?${params.toString()}`)
@@ -91,7 +117,7 @@ function RoomsContent() {
         setLoadingMore(false)
       }
     },
-    [searchCity, filters.category, filters.price_min, filters.price_max, filters.capacity_min, filters.sort]
+    [searchCity, filters.category, filters.price_min, filters.price_max, filters.capacity_min, filters.check_in, filters.days, filters.passengers, filters.sort]
   )
 
   const handleSearch = useCallback(() => {
@@ -100,24 +126,24 @@ function RoomsContent() {
     fetchRooms(1, false, filters.city)
   }, [filters.city, fetchRooms])
 
-  const filterDepsRef = useRef({ category: filters.category, price_min: filters.price_min, price_max: filters.price_max, capacity_min: filters.capacity_min, sort: filters.sort })
+  const filterDepsRef = useRef({ category: filters.category, price_min: filters.price_min, price_max: filters.price_max, capacity_min: filters.capacity_min, check_in: filters.check_in, days: filters.days, passengers: filters.passengers, sort: filters.sort })
   const initialLoadDone = useRef(false)
 
   useEffect(() => {
     if (!initialLoadDone.current) {
       initialLoadDone.current = true
       fetchRooms(1)
-      filterDepsRef.current = { category: filters.category, price_min: filters.price_min, price_max: filters.price_max, capacity_min: filters.capacity_min, sort: filters.sort }
+      filterDepsRef.current = { category: filters.category, price_min: filters.price_min, price_max: filters.price_max, capacity_min: filters.capacity_min, check_in: filters.check_in, days: filters.days, passengers: filters.passengers, sort: filters.sort }
       return
     }
     const prev = filterDepsRef.current
-    const changed = prev.category !== filters.category || prev.price_min !== filters.price_min || prev.price_max !== filters.price_max || prev.capacity_min !== filters.capacity_min || prev.sort !== filters.sort
+    const changed = prev.category !== filters.category || prev.price_min !== filters.price_min || prev.price_max !== filters.price_max || prev.capacity_min !== filters.capacity_min || prev.check_in !== filters.check_in || prev.days !== filters.days || prev.passengers !== filters.passengers || prev.sort !== filters.sort
     if (changed) {
-      filterDepsRef.current = { category: filters.category, price_min: filters.price_min, price_max: filters.price_max, capacity_min: filters.capacity_min, sort: filters.sort }
+      filterDepsRef.current = { category: filters.category, price_min: filters.price_min, price_max: filters.price_max, capacity_min: filters.capacity_min, check_in: filters.check_in, days: filters.days, passengers: filters.passengers, sort: filters.sort }
       setPage(1)
       fetchRooms(1)
     }
-  }, [filters.category, filters.price_min, filters.price_max, filters.capacity_min, filters.sort, fetchRooms])
+  }, [filters.category, filters.price_min, filters.price_max, filters.capacity_min, filters.check_in, filters.days, filters.passengers, filters.sort, fetchRooms])
 
   const handleLoadMore = () => {
     const nextPage = page + 1
@@ -140,12 +166,14 @@ function RoomsContent() {
   const activeFilterLabels = [
     searchCity && `${isAr ? 'المدينة' : 'City'}: ${searchCity}`,
     filters.category && `${isAr ? 'الفئة' : 'Category'}: ${isAr ? ROOM_CATEGORIES[filters.category as keyof typeof ROOM_CATEGORIES]?.ar : ROOM_CATEGORIES[filters.category as keyof typeof ROOM_CATEGORIES]?.en}`,
+    filters.check_in && `${isAr ? 'الوصول' : 'Check-in'}: ${filters.check_in}`,
+    filters.days && `${filters.days} ${isAr ? 'ليالي' : 'nights'}`,
+    filters.rooms_count && `${filters.rooms_count} ${isAr ? 'غرف' : 'rooms'}`,
+    filters.passengers && `${filters.passengers} ${isAr ? 'ضيوف' : 'guests'}`,
     filters.capacity_min && `${isAr ? 'ابتداءً من' : 'Min'} ${filters.capacity_min} ${t('rooms.guests')}`,
     filters.price_min && `${isAr ? 'السعر من' : 'Price from'} ${filters.price_min}`,
     filters.price_max && `${isAr ? 'السعر إلى' : 'Price to'} ${filters.price_max}`,
   ].filter(Boolean) as string[]
-
-  const inputClass = 'w-full px-3 md:px-4 py-2.5 md:py-3 rounded-xl bg-slate-50 border-none text-slate-700 text-sm md:text-base font-medium focus:ring-2 focus:ring-primary focus:outline-none transition-colors hover:bg-slate-100'
 
   return (
     <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 pt-24 pb-8 md:pt-32 md:pb-16 lg:pt-36 lg:pb-20 animate-fade-in-up">
@@ -164,82 +192,200 @@ function RoomsContent() {
         {/* Row 1: City Search & Category */}
         <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 mb-4">
           <div className="sm:col-span-1">
-            <input
+            <Input
               type="text"
               value={filters.city}
               onChange={(e) => updateFilter('city', e.target.value)}
               onKeyDown={(e) => e.key === 'Enter' && handleSearch()}
               placeholder={t('rooms.filter_city')}
-              className="w-full h-12 md:h-14 px-4 rounded-2xl bg-slate-50 border-none text-slate-700 text-sm font-semibold focus:ring-2 focus:ring-primary focus:outline-none hover:bg-slate-100 transition-colors"
+              className="h-12 md:h-14 rounded-2xl border-slate-200 bg-slate-50 px-4 text-sm font-semibold text-slate-700 shadow-none hover:bg-slate-100"
             />
           </div>
 
-          <div className="relative sm:col-span-1">
-            <select
-              value={filters.category}
-              onChange={(e) => updateFilter('category', e.target.value)}
-              className="appearance-none w-full h-12 md:h-14 px-4 pe-10 rounded-2xl bg-slate-50 border-none text-slate-700 text-sm font-semibold focus:ring-2 focus:ring-primary focus:outline-none hover:bg-slate-100 transition-colors cursor-pointer"
+          <Popover>
+            <PopoverTrigger
+              className={cn(
+                'sm:col-span-1 flex h-12 w-full items-center justify-between rounded-2xl border border-slate-200 bg-slate-50 px-4 text-sm font-semibold shadow-none transition-colors hover:bg-slate-100 md:h-14',
+                filters.category ? 'text-slate-700' : 'text-slate-500'
+              )}
             >
-              <option value="">{t('rooms.filter_category')}</option>
-              {Object.entries(ROOM_CATEGORIES).map(([key, val]) => (
-                <option key={key} value={key}>
-                  {isAr ? val.ar : val.en}
-                </option>
-              ))}
-            </select>
-            <ChevronDown className="absolute end-4 top-1/2 -translate-y-1/2 h-4 w-4 text-slate-400 pointer-events-none" />
-          </div>
+              <span className="truncate">
+                {filters.category
+                  ? isAr
+                    ? ROOM_CATEGORIES[filters.category as keyof typeof ROOM_CATEGORIES]?.ar
+                    : ROOM_CATEGORIES[filters.category as keyof typeof ROOM_CATEGORIES]?.en
+                  : t('rooms.filter_category')}
+              </span>
+              <ChevronDown className="h-4 w-4 text-slate-400" />
+            </PopoverTrigger>
+            <PopoverContent className="w-64 p-2" align="start">
+              <div className="grid gap-1">
+                <Button
+                  variant={!filters.category ? 'secondary' : 'ghost'}
+                  className="h-10 justify-start rounded-xl"
+                  onClick={() => updateFilter('category', '')}
+                >
+                  {t('rooms.filter_category')}
+                </Button>
+                {Object.entries(ROOM_CATEGORIES).map(([key, val]) => (
+                  <Button
+                    key={key}
+                    variant={filters.category === key ? 'secondary' : 'ghost'}
+                    className="h-10 justify-start rounded-xl"
+                    onClick={() => updateFilter('category', key)}
+                  >
+                    {isAr ? val.ar : val.en}
+                  </Button>
+                ))}
+              </div>
+            </PopoverContent>
+          </Popover>
 
           {/* Search button */}
-          <button
+          <Button
             onClick={handleSearch}
-            className="flex items-center justify-center gap-2 h-12 md:h-14 px-6 rounded-2xl bg-primary text-white font-bold transition-all shadow-sm shadow-primary/20 hover:bg-primary/90 hover:scale-[1.02] active:scale-[0.98]"
+            className="h-12 rounded-2xl px-6 font-bold shadow-sm shadow-primary/20 md:h-14"
           >
             <Search className="h-5 w-5" />
             <span>{t('common.search')}</span>
-          </button>
+          </Button>
         </div>
 
-        {/* Row 2: Sort & More Filters */}
+        {/* Row 2: Date, Days, Rooms, Passengers */}
+        <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 mb-4">
+          {/* Check-in Date */}
+          <Popover>
+            <PopoverTrigger
+              className={cn(
+                'flex h-12 w-full items-center justify-between rounded-2xl border border-slate-200 bg-slate-50 px-4 text-sm font-semibold shadow-none transition-colors hover:bg-slate-100 md:h-14',
+                validCheckInDate ? 'text-slate-700' : 'text-slate-500'
+              )}
+            >
+              <span className="flex min-w-0 items-center gap-2 truncate">
+                <CalendarDays className="h-4 w-4 shrink-0 text-slate-400" />
+                {validCheckInDate
+                  ? format(validCheckInDate, 'PPP', { locale: isAr ? arSA : enUS })
+                  : t('rooms.filter_date')}
+              </span>
+              <ChevronDown className="h-4 w-4 shrink-0 text-slate-400" />
+            </PopoverTrigger>
+            <PopoverContent className="w-auto p-0" align="start">
+              <Calendar
+                mode="single"
+                selected={validCheckInDate}
+                onSelect={(date) => updateFilter('check_in', date ? format(date, 'yyyy-MM-dd') : '')}
+                disabled={(date) => date < new Date(new Date().setHours(0, 0, 0, 0))}
+                initialFocus
+              />
+            </PopoverContent>
+          </Popover>
+
+          {/* Number of Nights */}
+          <div className="relative">
+            <Moon className="absolute start-3 top-1/2 -translate-y-1/2 h-4 w-4 text-slate-400 pointer-events-none" />
+            <Input
+              type="number"
+              min="1"
+              value={filters.days}
+              onChange={(e) => updateFilter('days', e.target.value)}
+              placeholder={t('rooms.filter_days')}
+              className="h-12 rounded-2xl border-slate-200 bg-slate-50 pe-3 ps-9 text-sm font-semibold text-slate-700 shadow-none hover:bg-slate-100 md:h-14"
+            />
+          </div>
+
+          {/* Number of Rooms */}
+          <div className="relative">
+            <DoorOpen className="absolute start-3 top-1/2 -translate-y-1/2 h-4 w-4 text-slate-400 pointer-events-none" />
+            <Input
+              type="number"
+              min="1"
+              value={filters.rooms_count}
+              onChange={(e) => updateFilter('rooms_count', e.target.value)}
+              placeholder={t('rooms.filter_rooms_count')}
+              className="h-12 rounded-2xl border-slate-200 bg-slate-50 pe-3 ps-9 text-sm font-semibold text-slate-700 shadow-none hover:bg-slate-100 md:h-14"
+            />
+          </div>
+
+          {/* Number of Passengers/Guests */}
+          <div className="relative">
+            <Users className="absolute start-3 top-1/2 -translate-y-1/2 h-4 w-4 text-slate-400 pointer-events-none" />
+            <Input
+              type="number"
+              min="1"
+              value={filters.passengers}
+              onChange={(e) => updateFilter('passengers', e.target.value)}
+              placeholder={t('rooms.filter_passengers')}
+              className="h-12 rounded-2xl border-slate-200 bg-slate-50 pe-3 ps-9 text-sm font-semibold text-slate-700 shadow-none hover:bg-slate-100 md:h-14"
+            />
+          </div>
+        </div>
+
+        {/* Row 3: Sort & More Filters */}
         <div className="flex items-center justify-between pt-4 border-t border-slate-100">
           <div className="flex items-center gap-3">
             {/* Sort */}
-            <div className="relative">
-              <select
-                value={filters.sort}
-                onChange={(e) => updateFilter('sort', e.target.value)}
-                className="appearance-none w-40 md:w-48 h-10 px-4 pe-10 rounded-xl bg-slate-50 border-none text-slate-700 font-semibold text-xs md:text-sm focus:ring-2 focus:ring-primary focus:outline-none hover:bg-slate-100 transition-colors cursor-pointer"
-              >
-                <option value="newest">{t('rooms.sort_newest')}</option>
-                <option value="price_asc">{t('rooms.sort_price_asc')}</option>
-                <option value="price_desc">{t('rooms.sort_price_desc')}</option>
-              </select>
-              <ChevronDown className="absolute end-3 top-1/2 -translate-y-1/2 h-4 w-4 text-slate-400 pointer-events-none" />
-            </div>
+            <Popover>
+              <PopoverTrigger className="flex h-10 w-40 items-center justify-between rounded-xl border border-slate-200 bg-slate-50 px-4 text-xs font-semibold text-slate-700 shadow-none transition-colors hover:bg-slate-100 md:w-48 md:text-sm">
+                <span className="flex items-center gap-2 truncate">
+                  <ArrowUpDown className="h-4 w-4 text-slate-400" />
+                  {filters.sort === 'price_asc'
+                    ? t('rooms.sort_price_asc')
+                    : filters.sort === 'price_desc'
+                      ? t('rooms.sort_price_desc')
+                      : t('rooms.sort_newest')}
+                </span>
+                <ChevronDown className="h-4 w-4 text-slate-400" />
+              </PopoverTrigger>
+              <PopoverContent className="w-56 p-2" align="start">
+                <div className="grid gap-1">
+                  <Button
+                    variant={filters.sort === 'newest' ? 'secondary' : 'ghost'}
+                    className="h-10 justify-start rounded-xl"
+                    onClick={() => updateFilter('sort', 'newest')}
+                  >
+                    {t('rooms.sort_newest')}
+                  </Button>
+                  <Button
+                    variant={filters.sort === 'price_asc' ? 'secondary' : 'ghost'}
+                    className="h-10 justify-start rounded-xl"
+                    onClick={() => updateFilter('sort', 'price_asc')}
+                  >
+                    {t('rooms.sort_price_asc')}
+                  </Button>
+                  <Button
+                    variant={filters.sort === 'price_desc' ? 'secondary' : 'ghost'}
+                    className="h-10 justify-start rounded-xl"
+                    onClick={() => updateFilter('sort', 'price_desc')}
+                  >
+                    {t('rooms.sort_price_desc')}
+                  </Button>
+                </div>
+              </PopoverContent>
+            </Popover>
 
             {/* More Filters toggle */}
-            <button
+            <Button
+              variant={showFilters ? 'secondary' : 'outline'}
               onClick={() => setShowFilters(!showFilters)}
               className={cn(
-                'flex items-center gap-2 h-10 px-4 rounded-xl font-bold text-xs md:text-sm transition-all',
-                showFilters
-                  ? 'bg-accent text-white hover:bg-accent/90'
-                  : 'bg-slate-50 text-slate-700 hover:bg-slate-100'
+                'h-10 rounded-xl px-4 font-bold text-xs md:text-sm',
+                showFilters && 'bg-accent text-white hover:bg-accent/90'
               )}
             >
               <SlidersHorizontal className="h-4 w-4" />
               {t('common.filter')}
-            </button>
+            </Button>
           </div>
 
           {hasActiveFilters && (
-            <button
+            <Button
+              variant="destructive"
               onClick={clearFilters}
-              className="flex items-center gap-1.5 text-xs font-semibold text-destructive bg-destructive/10 px-3 py-1.5 rounded-full hover:bg-destructive/20 transition-colors"
+              className="rounded-full px-3 py-1.5 text-xs font-semibold"
             >
               <X className="h-3.5 w-3.5" />
               {t('common.cancel')}
-            </button>
+            </Button>
           )}
         </div>
       </div>
@@ -252,44 +398,44 @@ function RoomsContent() {
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 md:gap-6">
             {/* Price min */}
             <div className="space-y-1.5 md:space-y-2">
-              <label className="block text-[10px] md:text-xs font-bold text-slate-500 uppercase tracking-widest">
+              <Label className="block text-[10px] md:text-xs font-bold uppercase tracking-widest text-slate-500">
                 {t('rooms.filter_price')} ({t('common.from')})
-              </label>
-              <input
+              </Label>
+              <Input
                 type="number"
                 min="0"
                 value={filters.price_min}
                 onChange={(e) => updateFilter('price_min', e.target.value)}
                 placeholder="0"
-                className={inputClass}
+                className="h-11 rounded-xl border-slate-200 bg-slate-50 text-sm font-medium text-slate-700 shadow-none hover:bg-slate-100"
               />
             </div>
             {/* Price max */}
             <div className="space-y-1.5 md:space-y-2">
-              <label className="block text-[10px] md:text-xs font-bold text-slate-500 uppercase tracking-widest">
+              <Label className="block text-[10px] md:text-xs font-bold uppercase tracking-widest text-slate-500">
                 {t('rooms.filter_price')} ({t('common.to')})
-              </label>
-              <input
+              </Label>
+              <Input
                 type="number"
                 min="0"
                 value={filters.price_max}
                 onChange={(e) => updateFilter('price_max', e.target.value)}
                 placeholder="10000"
-                className={inputClass}
+                className="h-11 rounded-xl border-slate-200 bg-slate-50 text-sm font-medium text-slate-700 shadow-none hover:bg-slate-100"
               />
             </div>
             {/* Capacity */}
             <div className="space-y-1.5 md:space-y-2">
-              <label className="block text-[10px] md:text-xs font-bold text-slate-500 uppercase tracking-widest">
+              <Label className="block text-[10px] md:text-xs font-bold uppercase tracking-widest text-slate-500">
                 {t('rooms.filter_capacity')}
-              </label>
-              <input
+              </Label>
+              <Input
                 type="number"
                 min="1"
                 value={filters.capacity_min}
                 onChange={(e) => updateFilter('capacity_min', e.target.value)}
                 placeholder="1"
-                className={inputClass}
+                className="h-11 rounded-xl border-slate-200 bg-slate-50 text-sm font-medium text-slate-700 shadow-none hover:bg-slate-100"
               />
             </div>
           </div>
@@ -314,12 +460,13 @@ function RoomsContent() {
           {activeFilterLabels.length > 0 && (
             <div className="flex flex-wrap gap-2">
               {activeFilterLabels.map((label) => (
-                <span
+                <Badge
                   key={label}
-                  className="inline-flex rounded-full border border-slate-200 bg-white px-3 py-1.5 text-xs font-semibold text-slate-600 shadow-sm"
+                  variant="outline"
+                  className="rounded-full border-slate-200 bg-white px-3 py-1.5 text-xs font-semibold text-slate-600 shadow-sm"
                 >
                   {label}
-                </span>
+                </Badge>
               ))}
             </div>
           )}
@@ -355,14 +502,15 @@ function RoomsContent() {
           {/* Load more */}
           {page < totalPages && (
             <div className="flex justify-center mt-12 md:mt-16">
-              <button
+              <Button
                 onClick={handleLoadMore}
                 disabled={loadingMore}
-                className="group inline-flex items-center gap-2 md:gap-3 px-6 md:px-8 py-3 md:py-4 rounded-2xl bg-white border border-slate-200 text-slate-900 text-sm md:text-base font-bold hover:bg-slate-50 transition-all shadow-sm disabled:opacity-50 hover:shadow-md hover:-translate-y-0.5"
+                variant="outline"
+                className="h-auto rounded-2xl border-slate-200 px-6 py-3 text-sm font-bold text-slate-900 shadow-sm hover:bg-slate-50 hover:shadow-md md:px-8 md:py-4 md:text-base"
               >
                 {loadingMore && <Loader2 className="h-4 w-4 md:h-5 md:w-5 animate-spin text-primary" />}
                 {loadingMore ? t('common.loading') : t('common.view_all')}
-              </button>
+              </Button>
             </div>
           )}
         </>

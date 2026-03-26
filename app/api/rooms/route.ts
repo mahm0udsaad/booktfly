@@ -18,6 +18,8 @@ export async function GET(request: NextRequest) {
     const priceMin = searchParams.get('price_min')
     const priceMax = searchParams.get('price_max')
     const capacityMin = searchParams.get('capacity_min')
+    const checkIn = searchParams.get('check_in')
+    const days = parseInt(searchParams.get('days') || '0', 10)
     const providerId = searchParams.get('provider_id')
     const sort = searchParams.get('sort') || 'newest'
     const page = parseInt(searchParams.get('page') || '1', 10)
@@ -54,6 +56,17 @@ export async function GET(request: NextRequest) {
 
     if (capacityMin) {
       query = query.gte('max_capacity', parseInt(capacityMin, 10))
+    }
+
+    if (checkIn) {
+      const checkInDate = new Date(checkIn)
+      const checkOutDate = days > 0
+        ? new Date(checkInDate.getTime() + days * 24 * 60 * 60 * 1000)
+        : checkInDate
+      const checkInStr = checkInDate.toISOString().split('T')[0]
+      const checkOutStr = checkOutDate.toISOString().split('T')[0]
+      query = query.or(`available_from.is.null,available_from.lte.${checkInStr}`)
+      query = query.or(`available_to.is.null,available_to.gte.${checkOutStr}`)
     }
 
     switch (sort) {
