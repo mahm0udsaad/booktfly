@@ -1,27 +1,40 @@
 'use client'
 
-import { useState } from 'react'
+import { Suspense, useState } from 'react'
 import { useForm } from 'react-hook-form'
 import { zodResolver } from '@hookform/resolvers/zod'
 import { useTranslations } from 'next-intl'
 import { useLocale } from 'next-intl'
+import { useSearchParams } from 'next/navigation'
 import Link from 'next/link'
 import Image from 'next/image'
 import { z } from 'zod'
 import { Mail, Lock, User, Phone, Loader2, CheckCircle2, ArrowRight, Eye, EyeOff } from 'lucide-react'
-import { motion, AnimatePresence } from 'framer-motion'
+import { motion } from 'framer-motion'
 import { createClient } from '@/lib/supabase/client'
-import { getAuthErrorKey } from '@/lib/auth-client'
+import { getAuthCallbackUrl, getAuthErrorKey, getSafeRedirectPath } from '@/lib/auth-client'
 import { getSignupSchema } from '@/lib/validations'
 import { toast } from '@/components/ui/toaster'
+import { GoogleAuthButton } from '@/components/auth/google-auth-button'
 import { cn } from '@/lib/utils'
 
 type SignupFormData = z.infer<ReturnType<typeof getSignupSchema>>
 
 export default function SignupPage() {
+  return (
+    <Suspense fallback={<div className="min-h-screen flex items-center justify-center"><Loader2 className="w-10 h-10 animate-spin text-primary" /></div>}>
+      <SignupContent />
+    </Suspense>
+  )
+}
+
+function SignupContent() {
   const t = useTranslations('auth')
   const tCommon = useTranslations('common')
   const locale = useLocale() as 'ar' | 'en'
+  const searchParams = useSearchParams()
+  const redirectTo = searchParams.get('redirect')
+  const safeRedirectTo = getSafeRedirectPath(redirectTo)
   const [isLoading, setIsLoading] = useState(false)
   const [isVerificationSent, setIsVerificationSent] = useState(false)
   const [showPassword, setShowPassword] = useState(false)
@@ -45,7 +58,11 @@ export default function SignupPage() {
         email: data.email,
         password: data.password,
         options: {
-          emailRedirectTo: `${window.location.origin}/${locale}/auth/callback`,
+          emailRedirectTo: getAuthCallbackUrl({
+            origin: window.location.origin,
+            locale,
+            redirectTo: safeRedirectTo,
+          }),
           data: {
             full_name: data.full_name,
             phone: data.phone || null,
@@ -61,6 +78,40 @@ export default function SignupPage() {
       }
 
       setIsVerificationSent(true)
+    } catch {
+      toast({ title: tCommon('error'), variant: 'destructive' })
+    } finally {
+      setIsLoading(false)
+    }
+  }
+
+  async function handleGoogleAuth() {
+    setIsLoading(true)
+    try {
+      const supabase = createClient()
+      const { data, error } = await supabase.auth.signInWithOAuth({
+        provider: 'google',
+        options: {
+          redirectTo: getAuthCallbackUrl({
+            origin: window.location.origin,
+            locale,
+            redirectTo: safeRedirectTo,
+          }),
+          skipBrowserRedirect: true,
+        },
+      })
+
+      if (error) {
+        toast({ title: t(`errors.${getAuthErrorKey(error)}`), variant: 'destructive' })
+        return
+      }
+
+      if (!data?.url) {
+        toast({ title: t('errors.generic'), variant: 'destructive' })
+        return
+      }
+
+      window.location.assign(data.url)
     } catch {
       toast({ title: tCommon('error'), variant: 'destructive' })
     } finally {
@@ -93,7 +144,11 @@ export default function SignupPage() {
             {t('check_email_description')}
           </p>
           <Link
-            href={`/${locale}/auth/login`}
+            href={
+              safeRedirectTo
+                ? `/${locale}/auth/login?redirect=${encodeURIComponent(safeRedirectTo)}`
+                : `/${locale}/auth/login`
+            }
             className="w-full inline-flex items-center justify-center py-4 px-8 rounded-2xl bg-primary text-primary-foreground font-black text-lg hover:bg-primary/90 hover:shadow-xl hover:shadow-primary/20 transition-all duration-300"
           >
             {tCommon('login')}
@@ -368,6 +423,26 @@ export default function SignupPage() {
                   )}
                 </button>
               </form>
+
+              <div className="mt-8 space-y-4">
+                <div className="relative">
+                  <div className="absolute inset-0 flex items-center">
+                    <div className="w-full border-t border-border/60" />
+                  </div>
+                  <div className="relative flex justify-center">
+                    <span className="bg-card px-4 text-sm font-semibold text-muted-foreground">
+                      {t('or_continue_with')}
+                    </span>
+                  </div>
+                </div>
+
+                <GoogleAuthButton
+                  label={t('google')}
+                  onClick={handleGoogleAuth}
+                  disabled={isLoading}
+                  isLoading={isLoading}
+                />
+              </div>
             </div>
 
             <motion.div 
@@ -379,7 +454,11 @@ export default function SignupPage() {
               <p className="text-muted-foreground font-medium">
                 {t('already_have_account')}{' '}
                 <Link 
-                  href={`/${locale}/auth/login`} 
+                  href={
+                    safeRedirectTo
+                      ? `/${locale}/auth/login?redirect=${encodeURIComponent(safeRedirectTo)}`
+                      : `/${locale}/auth/login`
+                  }
                   className="text-primary font-black hover:text-primary/80 transition-colors inline-flex items-center gap-1 group"
                 >
                   {tCommon('login')}

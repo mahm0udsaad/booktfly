@@ -12,9 +12,15 @@ import { z } from 'zod'
 import { Mail, Lock, Loader2, Sparkles, Eye, EyeOff, CheckCircle2, ArrowRight } from 'lucide-react'
 import { motion, AnimatePresence } from 'framer-motion'
 import { createClient } from '@/lib/supabase/client'
-import { getPostLoginRedirect, navigateAfterLogin, getAuthErrorKey } from '@/lib/auth-client'
+import {
+  getAuthCallbackUrl,
+  getAuthErrorKey,
+  getSafeRedirectPath,
+  navigateAfterLogin,
+} from '@/lib/auth-client'
 import { getLoginSchema, getMagicLinkSchema } from '@/lib/validations'
 import { toast } from '@/components/ui/toaster'
+import { GoogleAuthButton } from '@/components/auth/google-auth-button'
 import { cn } from '@/lib/utils'
 
 type LoginFormData = z.infer<ReturnType<typeof getLoginSchema>>
@@ -35,6 +41,7 @@ function LoginContent() {
   const router = useRouter()
   const searchParams = useSearchParams()
   const redirectTo = searchParams.get('redirect')
+  const safeRedirectTo = getSafeRedirectPath(redirectTo)
   const [isMagicLink, setIsMagicLink] = useState(false)
   const [isLoading, setIsLoading] = useState(false)
   const [showPassword, setShowPassword] = useState(false)
@@ -95,7 +102,11 @@ function LoginContent() {
       const { error } = await supabase.auth.signInWithOtp({
         email: data.email,
         options: {
-          emailRedirectTo: `${window.location.origin}/${locale}/auth/callback`,
+          emailRedirectTo: getAuthCallbackUrl({
+            origin: window.location.origin,
+            locale,
+            redirectTo: safeRedirectTo,
+          }),
         },
       })
 
@@ -105,6 +116,40 @@ function LoginContent() {
       }
 
       toast({ title: t('magic_link_sent'), variant: 'success' })
+    } catch {
+      toast({ title: tCommon('error'), variant: 'destructive' })
+    } finally {
+      setIsLoading(false)
+    }
+  }
+
+  async function handleGoogleAuth() {
+    setIsLoading(true)
+    try {
+      const supabase = createClient()
+      const { data, error } = await supabase.auth.signInWithOAuth({
+        provider: 'google',
+        options: {
+          redirectTo: getAuthCallbackUrl({
+            origin: window.location.origin,
+            locale,
+            redirectTo: safeRedirectTo,
+          }),
+          skipBrowserRedirect: true,
+        },
+      })
+
+      if (error) {
+        toast({ title: t(`errors.${getAuthErrorKey(error)}`), variant: 'destructive' })
+        return
+      }
+
+      if (!data?.url) {
+        toast({ title: t('errors.generic'), variant: 'destructive' })
+        return
+      }
+
+      window.location.assign(data.url)
     } catch {
       toast({ title: tCommon('error'), variant: 'destructive' })
     } finally {
@@ -421,6 +466,26 @@ function LoginContent() {
                   </motion.form>
                 )}
               </AnimatePresence>
+
+              <div className="mt-8 space-y-4">
+                <div className="relative">
+                  <div className="absolute inset-0 flex items-center">
+                    <div className="w-full border-t border-border/60" />
+                  </div>
+                  <div className="relative flex justify-center">
+                    <span className="bg-card px-4 text-sm font-semibold text-muted-foreground">
+                      {t('or_continue_with')}
+                    </span>
+                  </div>
+                </div>
+
+                <GoogleAuthButton
+                  label={t('google')}
+                  onClick={handleGoogleAuth}
+                  disabled={isLoading}
+                  isLoading={isLoading}
+                />
+              </div>
             </div>
 
             <motion.div 
@@ -432,7 +497,11 @@ function LoginContent() {
               <p className="text-muted-foreground font-medium">
                 {t('dont_have_account')}{' '}
                 <Link 
-                  href={`/${locale}/auth/signup`} 
+                  href={
+                    safeRedirectTo
+                      ? `/${locale}/auth/signup?redirect=${encodeURIComponent(safeRedirectTo)}`
+                      : `/${locale}/auth/signup`
+                  }
                   className="text-primary font-black hover:text-primary/80 transition-colors inline-flex items-center gap-1 group"
                 >
                   {tCommon('signup')}

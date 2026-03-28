@@ -33,13 +33,42 @@ type RedirectOptions = {
   role?: UserRole | null
 }
 
+type AuthCallbackOptions = Pick<RedirectOptions, 'locale' | 'redirectTo'> & {
+  origin: string
+}
+
+export function getSafeRedirectPath(redirectTo?: string | null) {
+  if (redirectTo && redirectTo.startsWith('/') && !redirectTo.startsWith('//')) {
+    return redirectTo
+  }
+
+  return null
+}
+
+export function getAuthCallbackUrl({
+  origin,
+  locale,
+  redirectTo,
+}: AuthCallbackOptions) {
+  const callbackUrl = new URL(`/${locale}/auth/callback`, origin)
+  const safeRedirect = getSafeRedirectPath(redirectTo)
+
+  if (safeRedirect) {
+    callbackUrl.searchParams.set('next', safeRedirect)
+  }
+
+  return callbackUrl.toString()
+}
+
 export function getPostLoginRedirect({
   locale,
   redirectTo,
   role,
 }: RedirectOptions) {
-  if (redirectTo && redirectTo.startsWith('/') && !redirectTo.startsWith('//')) {
-    return redirectTo
+  const safeRedirect = getSafeRedirectPath(redirectTo)
+
+  if (safeRedirect) {
+    return safeRedirect
   }
 
   if (role === 'admin') return `/${locale}/admin`
