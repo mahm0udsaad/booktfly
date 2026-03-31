@@ -69,9 +69,11 @@ export function getTripSchema(locale: Locale = 'ar') {
   })
 }
 
+const englishNameRegex = /^[a-zA-Z\s\-'.]+$/
+
 export const passengerSchema = z.object({
-  first_name: z.string().min(2, 'First name is required'),
-  last_name: z.string().min(2, 'Last name is required'),
+  first_name: z.string().min(2, 'First name is required').regex(englishNameRegex, 'Please enter name in English only'),
+  last_name: z.string().min(2, 'Last name is required').regex(englishNameRegex, 'Please enter name in English only'),
   date_of_birth: z.string().min(1, 'Date of birth is required'),
   id_number: z.string().min(4, 'ID/Passport number is required'),
   id_expiry_date: z.string().min(1, 'ID expiry date is required'),
@@ -174,6 +176,40 @@ export function getFlightRequestSchema(locale: Locale = 'ar') {
   })
 }
 
+export function getCarSchema(locale: Locale = 'ar') {
+  return z.object({
+    brand_ar: z.string().min(1, v(locale, 'car_brand_required')),
+    brand_en: z.string().optional(),
+    model_ar: z.string().min(1, v(locale, 'car_model_required')),
+    model_en: z.string().optional(),
+    year: z.number().min(2000, v(locale, 'car_year_required')).max(new Date().getFullYear() + 1),
+    city_ar: z.string().min(1, v(locale, 'city_required')),
+    city_en: z.string().optional(),
+    category: z.string().min(1, v(locale, 'category_required')),
+    price_per_day: z.number().min(1, v(locale, 'price_required')),
+    currency: z.enum(['SAR', 'USD']),
+    seats_count: z.number().min(1),
+    transmission: z.enum(['automatic', 'manual']),
+    fuel_type: z.enum(['petrol', 'diesel', 'electric', 'hybrid']),
+    features: z.array(z.string()).optional(),
+    instant_book: z.boolean(),
+    available_from: z.string().optional(),
+    available_to: z.string().optional(),
+  })
+}
+
+export function getCarBookingSchema(locale: Locale = 'ar') {
+  return z.object({
+    car_id: z.string().uuid(),
+    guest_name: z.string().min(2, v(locale, 'name_required')),
+    guest_phone: z.string().optional(),
+    guest_email: z.string().email(v(locale, 'email_invalid')).optional(),
+    pickup_date: z.string().min(1, v(locale, 'pickup_required')),
+    return_date: z.string().min(1, v(locale, 'return_required')),
+    number_of_days: z.number().min(1, v(locale, 'days_required')),
+  })
+}
+
 // Default Arabic schemas for backward compatibility (used in API routes)
 export const signupSchema = getSignupSchema('ar')
 export const loginSchema = getLoginSchema('ar')
@@ -184,5 +220,7 @@ export const bookingSchema = getBookingSchema('ar')
 export const updatePasswordSchema = getUpdatePasswordSchema('ar')
 export const roomSchema = getRoomSchema('ar')
 export const roomBookingSchema = getRoomBookingSchema('ar')
+export const carSchema = getCarSchema('ar')
+export const carBookingSchema = getCarBookingSchema('ar')
 export const markeeteerApplicationSchema = getMarkeeteerApplicationSchema('ar')
 export const flightRequestSchema = getFlightRequestSchema('ar')

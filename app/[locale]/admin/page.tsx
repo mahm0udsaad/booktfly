@@ -2,6 +2,7 @@
 
 import { useEffect, useState, useCallback, useRef } from 'react'
 import { useLocale, useTranslations } from 'next-intl'
+import Link from 'next/link'
 import { createClient } from '@/lib/supabase/client'
 import {
   Users,
@@ -35,6 +36,7 @@ type MetricCard = {
   color: string
   bg: string
   change?: number
+  href: string
 }
 
 type ActivityLog = {
@@ -429,6 +431,7 @@ export default function AdminDashboard() {
       color: 'text-blue-500',
       bg: 'bg-blue-500/10',
       change: calcChange(data.totalUsers, data.prevTotalUsers),
+      href: `/${locale}/admin/users`,
     },
     {
       key: 'newUsersToday',
@@ -438,6 +441,7 @@ export default function AdminDashboard() {
       color: 'text-cyan-500',
       bg: 'bg-cyan-500/10',
       change: calcChange(data.newUsersToday, data.prevNewUsersToday),
+      href: `/${locale}/admin/users`,
     },
     {
       key: 'activeTrips',
@@ -447,6 +451,7 @@ export default function AdminDashboard() {
       color: 'text-amber-600',
       bg: 'bg-amber-500/10',
       change: calcChange(data.activeTrips, data.prevActiveTrips),
+      href: `/${locale}/admin/trips`,
     },
     {
       key: 'totalBookings',
@@ -456,6 +461,7 @@ export default function AdminDashboard() {
       color: 'text-violet-500',
       bg: 'bg-violet-500/10',
       change: calcChange(data.totalBookings, data.prevTotalBookings),
+      href: `/${locale}/admin/bookings`,
     },
     {
       key: 'revenueThisMonth',
@@ -465,6 +471,7 @@ export default function AdminDashboard() {
       color: 'text-emerald-500',
       bg: 'bg-emerald-500/10',
       change: calcChange(data.revenueThisMonth, data.prevRevenueThisMonth),
+      href: `/${locale}/admin/revenue`,
     },
     {
       key: 'pendingApplications',
@@ -474,6 +481,7 @@ export default function AdminDashboard() {
       color: 'text-orange-500',
       bg: 'bg-orange-500/10',
       change: calcChange(data.pendingApplications, data.prevPendingApplications),
+      href: `/${locale}/admin/applications`,
     },
     {
       key: 'activeProviders',
@@ -483,6 +491,7 @@ export default function AdminDashboard() {
       color: 'text-teal-500',
       bg: 'bg-teal-500/10',
       change: calcChange(data.activeProviders, data.prevActiveProviders),
+      href: `/${locale}/admin/providers`,
     },
     {
       key: 'pendingPayments',
@@ -492,6 +501,7 @@ export default function AdminDashboard() {
       color: 'text-red-500',
       bg: 'bg-red-500/10',
       change: calcChange(data.pendingPayments, data.prevPendingPayments),
+      href: `/${locale}/admin/bookings`,
     },
   ]
 
@@ -565,9 +575,10 @@ export default function AdminDashboard() {
           const isPositive = changeVal >= 0
           const isNeutral = changeVal === 0
           return (
-            <div
+            <Link
               key={card.key}
-              className="group bg-white border border-slate-200 rounded-2xl p-5 shadow-sm hover:shadow-lg transition-all duration-300 hover:-translate-y-0.5 animate-fade-in-up"
+              href={card.href}
+              className="group bg-white border border-slate-200 rounded-2xl p-5 shadow-sm hover:shadow-lg transition-all duration-300 hover:-translate-y-0.5 animate-fade-in-up cursor-pointer"
               style={{ animationDelay: `${idx * 60}ms` }}
             >
               <div className="flex items-start justify-between mb-3">
@@ -586,7 +597,7 @@ export default function AdminDashboard() {
               </div>
               <p className="text-xs font-bold text-slate-400 uppercase tracking-wider mb-1">{card.label}</p>
               <p className="text-2xl font-black text-slate-900 tracking-tight">{card.value}</p>
-            </div>
+            </Link>
           )
         })}
       </div>
@@ -638,9 +649,14 @@ export default function AdminDashboard() {
         <div className="lg:col-span-3 bg-white border border-slate-200 rounded-2xl p-6 shadow-sm">
           <div className="flex items-center justify-between mb-6">
             <h2 className="text-lg font-bold text-slate-900">{t('recent_activity')}</h2>
-            <div className="flex items-center gap-1.5">
-              <span className="h-2 w-2 rounded-full bg-emerald-400 animate-pulse" />
-              <span className="text-xs font-semibold text-slate-400">{t('live')}</span>
+            <div className="flex items-center gap-3">
+              <Link href={`/${locale}/admin/activity-logs`} className="text-xs font-semibold text-blue-500 hover:text-blue-700 transition-colors">
+                {isAr ? 'عرض الكل' : 'View All'}
+              </Link>
+              <div className="flex items-center gap-1.5">
+                <span className="h-2 w-2 rounded-full bg-emerald-400 animate-pulse" />
+                <span className="text-xs font-semibold text-slate-400">{t('live')}</span>
+              </div>
             </div>
           </div>
           <div className="space-y-1 max-h-[480px] overflow-y-auto">
@@ -681,7 +697,12 @@ export default function AdminDashboard() {
         </div>
 
         <div className="lg:col-span-2 bg-white border border-slate-200 rounded-2xl p-6 shadow-sm">
-          <h2 className="text-lg font-bold text-slate-900 mb-6">{t('active_alerts')}</h2>
+          <div className="flex items-center justify-between mb-6">
+            <h2 className="text-lg font-bold text-slate-900">{t('active_alerts')}</h2>
+            <Link href={`/${locale}/admin/alerts`} className="text-xs font-semibold text-blue-500 hover:text-blue-700 transition-colors">
+              {isAr ? 'عرض الكل' : 'View All'}
+            </Link>
+          </div>
           <div className="space-y-3 max-h-[480px] overflow-y-auto">
             {data.alerts.length === 0 && (
               <div className="flex flex-col items-center justify-center py-12 rounded-xl bg-emerald-50 border border-emerald-200">
@@ -730,7 +751,12 @@ export default function AdminDashboard() {
         style={{ animationDelay: '700ms' }}
       >
         <div className="bg-white border border-slate-200 rounded-2xl p-6 shadow-sm">
-          <h2 className="text-lg font-bold text-slate-900 mb-4">{t('flights_overview')}</h2>
+          <div className="flex items-center justify-between mb-4">
+            <h2 className="text-lg font-bold text-slate-900">{t('flights_overview')}</h2>
+            <Link href={`/${locale}/admin/trips`} className="text-xs font-semibold text-blue-500 hover:text-blue-700 transition-colors">
+              {isAr ? 'عرض الكل' : 'View All'}
+            </Link>
+          </div>
           <div className="space-y-3">
             {data.topTrips.length === 0 && (
               <p className="text-sm text-slate-400 text-center py-8">{isAr ? 'لا توجد رحلات' : 'No trips'}</p>
@@ -775,7 +801,12 @@ export default function AdminDashboard() {
         </div>
 
         <div className="bg-white border border-slate-200 rounded-2xl p-6 shadow-sm">
-          <h2 className="text-lg font-bold text-slate-900 mb-4">{t('top_providers')}</h2>
+          <div className="flex items-center justify-between mb-4">
+            <h2 className="text-lg font-bold text-slate-900">{t('top_providers')}</h2>
+            <Link href={`/${locale}/admin/providers`} className="text-xs font-semibold text-blue-500 hover:text-blue-700 transition-colors">
+              {isAr ? 'عرض الكل' : 'View All'}
+            </Link>
+          </div>
           <div className="space-y-3">
             {data.topProviders.length === 0 && (
               <p className="text-sm text-slate-400 text-center py-8">{isAr ? 'لا توجد بيانات' : 'No data'}</p>
@@ -811,7 +842,12 @@ export default function AdminDashboard() {
         </div>
 
         <div className="bg-white border border-slate-200 rounded-2xl p-6 shadow-sm">
-          <h2 className="text-lg font-bold text-slate-900 mb-4">{t('recent_bookings')}</h2>
+          <div className="flex items-center justify-between mb-4">
+            <h2 className="text-lg font-bold text-slate-900">{t('recent_bookings')}</h2>
+            <Link href={`/${locale}/admin/bookings`} className="text-xs font-semibold text-blue-500 hover:text-blue-700 transition-colors">
+              {isAr ? 'عرض الكل' : 'View All'}
+            </Link>
+          </div>
           <div className="space-y-3">
             {data.recentBookings.length === 0 && (
               <p className="text-sm text-slate-400 text-center py-8">{isAr ? 'لا توجد حجوزات' : 'No bookings'}</p>

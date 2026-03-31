@@ -89,6 +89,7 @@ export default function MarkeeteerDashboardPage() {
       icon: Star,
       color: 'text-yellow-500',
       bg: 'bg-yellow-500/10',
+      href: `/${locale}/marketeer/wallet`,
     },
     {
       label: isAr ? 'القيمة بالريال' : 'SAR Value',
@@ -96,6 +97,7 @@ export default function MarkeeteerDashboardPage() {
       icon: Wallet,
       color: 'text-green-500',
       bg: 'bg-green-500/10',
+      href: `/${locale}/marketeer/wallet`,
     },
     {
       label: isAr ? 'إجمالي المكتسب' : 'Total Earned',
@@ -103,6 +105,7 @@ export default function MarkeeteerDashboardPage() {
       icon: TrendingUp,
       color: 'text-blue-500',
       bg: 'bg-blue-500/10',
+      href: `/${locale}/marketeer/revenue`,
     },
     {
       label: isAr ? 'الإحالات' : 'Referrals',
@@ -110,6 +113,7 @@ export default function MarkeeteerDashboardPage() {
       icon: Users,
       color: 'text-purple-500',
       bg: 'bg-purple-500/10',
+      href: `/${locale}/marketeer/users`,
     },
   ]
 
@@ -192,8 +196,9 @@ export default function MarkeeteerDashboardPage() {
       {/* Stats */}
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-6">
         {statCards.map((card, idx) => (
-          <div
+          <Link
             key={card.label}
+            href={card.href}
             className="group bg-white border border-slate-200 rounded-[2rem] p-6 shadow-sm hover:shadow-xl transition-all duration-300 hover:-translate-y-1 animate-fade-in-up"
             style={{ animationDelay: `${idx * 80}ms` }}
           >
@@ -202,7 +207,7 @@ export default function MarkeeteerDashboardPage() {
             </div>
             <p className="text-3xl font-black text-slate-900 tracking-tighter">{card.value}</p>
             <p className="text-sm font-bold text-slate-400 uppercase tracking-widest mt-1">{card.label}</p>
-          </div>
+          </Link>
         ))}
       </div>
 

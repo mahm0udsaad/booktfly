@@ -1,6 +1,6 @@
 'use client'
 
-import { Suspense, useEffect, useState, use } from 'react'
+import { Suspense, useCallback, useEffect, useRef, useState, use } from 'react'
 import { format, isValid, parseISO } from 'date-fns'
 import { arSA, enUS } from 'date-fns/locale'
 import { useLocale, useTranslations } from 'next-intl'
@@ -26,6 +26,8 @@ import {
   Cake,
   IdCard,
   CalendarIcon,
+  ScanLine,
+  ImagePlus,
 } from 'lucide-react'
 import { capitalizeFirst, cn, formatPrice, formatPriceEN } from '@/lib/utils'
 import { MAX_SEATS_PER_BOOKING } from '@/lib/constants'
@@ -67,6 +69,8 @@ function BookTripContent({ params }: { params: Promise<{ id: string, locale: str
   const initialBookingType = searchParams.get('bookingType') === 'one_way' ? 'one_way' : 'round_trip'
   const [seatsCount, setSeatsCount] = useState(initialSeatsCount)
   const [bookingType] = useState<'round_trip' | 'one_way'>(initialBookingType)
+  const [scanningIndex, setScanningIndex] = useState<number | null>(null)
+  const fileInputRefs = useRef<(HTMLInputElement | null)[]>([])
 
   const Arrow = isAr ? ArrowLeft : ArrowRight
   const Back = isAr ? ChevronRight : ChevronLeft
@@ -131,6 +135,33 @@ function BookTripContent({ params }: { params: Promise<{ id: string, locale: str
     }
     fetchTrip()
   }, [tripId])
+
+  const handlePassportScan = useCallback(async (index: number, files: FileList | null) => {
+    if (!files?.length) return
+    setScanningIndex(index)
+    try {
+      const formData = new FormData()
+      Array.from(files).forEach((f) => formData.append('images', f))
+      const res = await fetch('/api/extract-passport', { method: 'POST', body: formData })
+      const result = await res.json()
+      if (!res.ok) {
+        toast({ title: isAr ? 'خطأ' : 'Error', description: result.error || (isAr ? 'فشل قراءة الجواز' : 'Failed to read passport'), variant: 'destructive' })
+        return
+      }
+      const d = result.data
+      if (d.first_name) setValue(`passengers.${index}.first_name`, d.first_name, { shouldValidate: true, shouldDirty: true })
+      if (d.last_name) setValue(`passengers.${index}.last_name`, d.last_name, { shouldValidate: true, shouldDirty: true })
+      if (d.date_of_birth) setValue(`passengers.${index}.date_of_birth`, d.date_of_birth, { shouldValidate: true, shouldDirty: true })
+      if (d.id_number) setValue(`passengers.${index}.id_number`, d.id_number, { shouldValidate: true, shouldDirty: true })
+      if (d.id_expiry_date) setValue(`passengers.${index}.id_expiry_date`, d.id_expiry_date, { shouldValidate: true, shouldDirty: true })
+      toast({ title: isAr ? 'تم' : 'Done', description: isAr ? 'تم استخراج بيانات الجواز بنجاح' : 'Passport data extracted successfully' })
+    } catch {
+      toast({ title: isAr ? 'خطأ' : 'Error', description: isAr ? 'فشل قراءة الجواز' : 'Failed to read passport', variant: 'destructive' })
+    } finally {
+      setScanningIndex(null)
+      if (fileInputRefs.current[index]) fileInputRefs.current[index]!.value = ''
+    }
+  }, [setValue, isAr])
 
   if (loading) return <BookingPageSkeleton />
 
@@ -334,7 +365,7 @@ function BookTripContent({ params }: { params: Promise<{ id: string, locale: str
 
             {fields.map((field, index) => (
               <div key={field.id} className="rounded-[1.5rem] md:rounded-[2.5rem] border border-slate-200 bg-white p-6 sm:p-8 md:p-10 shadow-xl shadow-slate-200/40">
-                <div className="flex items-center gap-2 md:gap-3 mb-6 md:mb-8">
+                <div className="flex items-center gap-2 md:gap-3 mb-4 md:mb-5">
                    <div className="h-10 w-10 md:h-12 md:w-12 rounded-xl md:rounded-2xl bg-primary/10 flex items-center justify-center shrink-0">
                       <span className="text-lg md:text-xl font-black text-primary">{index + 1}</span>
                    </div>
@@ -342,19 +373,59 @@ function BookTripContent({ params }: { params: Promise<{ id: string, locale: str
                      {t('booking.passenger_number', { number: index + 1 })}
                    </h3>
                 </div>
+                <div className="mb-4 md:mb-5 flex items-center gap-2 rounded-xl bg-amber-50 border border-amber-200 px-4 py-2.5 text-xs md:text-sm font-semibold text-amber-700">
+                  <ShieldCheck className="h-4 w-4 shrink-0" />
+                  {isAr ? 'يرجى إدخال جميع بيانات المسافر باللغة الإنجليزية كما في جواز السفر' : 'Please enter all passenger details in English as shown on the passport'}
+                </div>
+
+                <div className="mb-6 md:mb-8">
+                  <input
+                    ref={(el) => { fileInputRefs.current[index] = el }}
+                    type="file"
+                    accept="image/*"
+                    multiple
+                    className="hidden"
+                    onChange={(e) => handlePassportScan(index, e.target.files)}
+                  />
+                  <button
+                    type="button"
+                    onClick={() => fileInputRefs.current[index]?.click()}
+                    disabled={scanningIndex !== null}
+                    className={cn(
+                      'w-full flex items-center justify-center gap-3 rounded-2xl border-2 border-dashed py-4 md:py-5 transition-all font-bold text-sm md:text-base',
+                      scanningIndex === index
+                        ? 'border-primary bg-primary/5 text-primary cursor-wait'
+                        : 'border-slate-200 bg-slate-50/50 text-slate-500 hover:border-primary hover:bg-primary/5 hover:text-primary'
+                    )}
+                  >
+                    {scanningIndex === index ? (
+                      <>
+                        <Loader2 className="h-5 w-5 animate-spin" />
+                        {isAr ? 'جاري قراءة الجواز...' : 'Reading passport...'}
+                      </>
+                    ) : (
+                      <>
+                        <ScanLine className="h-5 w-5" />
+                        {isAr ? 'مسح الجواز أو الهوية بالصورة' : 'Scan passport or ID from photo'}
+                        <ImagePlus className="h-4 w-4 opacity-50" />
+                      </>
+                    )}
+                  </button>
+                </div>
 
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-5 md:gap-6">
                     {/* First Name */}
                     <div className="space-y-1.5 md:space-y-2">
                       <label className={labelClass}>
                         <User className="h-3.5 w-3.5 md:h-4 md:w-4" />
-                        {isAr ? 'الاسم الأول' : 'First Name'}
+                        {isAr ? 'الاسم الأول (بالإنجليزية)' : 'First Name (English)'}
                         <span className="text-destructive">*</span>
                       </label>
                       <input
                         {...register(`passengers.${index}.first_name`)}
+                        dir="ltr"
                         className={cn(inputClass, errors.passengers?.[index]?.first_name && errorInputClass)}
-                        placeholder={isAr ? 'الاسم الأول' : 'First Name'}
+                        placeholder="First Name"
                       />
                       {errors.passengers?.[index]?.first_name && (
                         <p className="text-xs font-bold text-destructive mt-1">{errors.passengers[index].first_name.message}</p>
@@ -365,13 +436,14 @@ function BookTripContent({ params }: { params: Promise<{ id: string, locale: str
                     <div className="space-y-1.5 md:space-y-2">
                       <label className={labelClass}>
                         <User className="h-3.5 w-3.5 md:h-4 md:w-4" />
-                        {isAr ? 'الاسم الأخير' : 'Last Name'}
+                        {isAr ? 'الاسم الأخير (بالإنجليزية)' : 'Last Name (English)'}
                         <span className="text-destructive">*</span>
                       </label>
                       <input
                         {...register(`passengers.${index}.last_name`)}
+                        dir="ltr"
                         className={cn(inputClass, errors.passengers?.[index]?.last_name && errorInputClass)}
-                        placeholder={isAr ? 'الاسم الأخير' : 'Last Name'}
+                        placeholder="Last Name"
                       />
                       {errors.passengers?.[index]?.last_name && (
                         <p className="text-xs font-bold text-destructive mt-1">{errors.passengers[index].last_name.message}</p>
@@ -404,10 +476,14 @@ function BookTripContent({ params }: { params: Promise<{ id: string, locale: str
                         <PopoverContent className="w-auto p-0" align="start">
                           <DateCalendar
                             mode="single"
+                            captionLayout="dropdown"
+                            startMonth={new Date(1920, 0)}
+                            endMonth={new Date()}
+                            defaultMonth={parseDateValue(watch(`passengers.${index}.date_of_birth`)) || new Date(2000, 0)}
                             selected={parseDateValue(watch(`passengers.${index}.date_of_birth`))}
                             onSelect={(date) => setValue(`passengers.${index}.date_of_birth`, date ? format(date, 'yyyy-MM-dd') : '', { shouldValidate: true, shouldDirty: true })}
                             disabled={(date) => date > new Date()}
-                            initialFocus
+                            autoFocus
                           />
                         </PopoverContent>
                       </Popover>
@@ -427,7 +503,7 @@ function BookTripContent({ params }: { params: Promise<{ id: string, locale: str
                         {...register(`passengers.${index}.id_number`)}
                         dir="ltr"
                         className={cn(inputClass, 'font-mono font-medium', errors.passengers?.[index]?.id_number && errorInputClass)}
-                        placeholder={isAr ? 'رقم الجواز أو الهوية' : 'Passport or ID number'}
+                        placeholder="Passport or ID number"
                       />
                       {errors.passengers?.[index]?.id_number && (
                         <p className="text-xs font-bold text-destructive mt-1">{errors.passengers[index].id_number.message}</p>
@@ -462,7 +538,7 @@ function BookTripContent({ params }: { params: Promise<{ id: string, locale: str
                             mode="single"
                             selected={parseDateValue(watch(`passengers.${index}.id_expiry_date`))}
                             onSelect={(date) => setValue(`passengers.${index}.id_expiry_date`, date ? format(date, 'yyyy-MM-dd') : '', { shouldValidate: true, shouldDirty: true })}
-                            initialFocus
+                            autoFocus
                           />
                         </PopoverContent>
                       </Popover>

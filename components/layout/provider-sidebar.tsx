@@ -14,6 +14,7 @@ import {
   X,
   LogOut,
   ExternalLink,
+  CarFront,
 } from 'lucide-react'
 import { useState, useRef } from 'react'
 import { cn } from '@/lib/utils'
@@ -27,6 +28,8 @@ const NAV_ITEMS = [
   { key: 'my_rooms', icon: BedDouble, href: '/provider/rooms' },
   { key: 'bookings', icon: BookOpen, href: '/provider/bookings' },
   { key: 'room_bookings', icon: BookOpen, href: '/provider/room-bookings' },
+  { key: 'my_cars', icon: CarFront, href: '/provider/cars' },
+  { key: 'car_bookings', icon: BookOpen, href: '/provider/car-bookings' },
   { key: 'revenue', icon: DollarSign, href: '/provider/revenue' },
   { key: 'profile', icon: User, href: '/provider/profile' },
 ]

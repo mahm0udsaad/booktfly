@@ -25,6 +25,10 @@ export type WalletTransactionType = 'credit' | 'debit' | 'withdrawal'
 export type WithdrawalStatus = 'pending' | 'approved' | 'rejected' | 'completed'
 
 export type RoomStatus = 'active' | 'deactivated' | 'removed'
+export type CarStatus = 'active' | 'deactivated' | 'removed'
+export type CarCategory = 'sedan' | 'suv' | 'luxury' | 'van' | 'economy'
+export type TransmissionType = 'automatic' | 'manual'
+export type FuelType = 'petrol' | 'diesel' | 'electric' | 'hybrid'
 
 export type FlypointsEventType =
   | 'registration_bonus'
@@ -97,6 +101,14 @@ export type NotificationType =
   | 'new_marketeer_application'
   | 'points_earned'
   | 'new_flight_request'
+  | 'last_minute_deal'
+  | 'last_minute_provider_alert'
+  | 'new_car_booking'
+  | 'car_booking_confirmed'
+  | 'car_booking_rejected'
+  | 'car_booking_cancelled'
+  | 'car_booking_refunded'
+  | 'car_removed'
 
 export type Profile = {
   id: string
@@ -186,6 +198,9 @@ export type Trip = {
   description_en: string | null
   is_direct: boolean
   image_url: string | null
+  is_last_minute: boolean
+  original_price: number | null
+  discount_percentage: number
   status: TripStatus
   removed_reason: string | null
   removed_by: string | null
@@ -332,6 +347,9 @@ export type Room = {
   instant_book: boolean
   available_from: string | null
   available_to: string | null
+  is_last_minute: boolean
+  original_price: number | null
+  discount_percentage: number
   status: RoomStatus
   removed_reason: string | null
   removed_by: string | null
@@ -389,6 +407,9 @@ export type PlatformSettings = {
   bank_account_holder_ar: string | null
   bank_account_holder_en: string | null
   flypoints_sar_rate: number
+  last_minute_threshold_hours: number
+  max_discount_percentage: number
+  auto_last_minute_notify: boolean
   updated_at: string
 }
 
@@ -486,6 +507,10 @@ export type ActivityEventType =
   | 'email_registered'
   | 'seat_reserved'
   | 'seat_released'
+  | 'car_created'
+  | 'car_removed'
+  | 'car_booking_created'
+  | 'car_booking_confirmed'
 
 export type AlertSeverity = 'info' | 'warning' | 'critical'
 
@@ -511,6 +536,85 @@ export type AdminAlert = {
   dismissed: boolean
   dismissed_by: string | null
   dismissed_at: string | null
+  created_at: string
+}
+
+export type Car = {
+  id: string
+  provider_id: string
+  brand_ar: string
+  brand_en: string | null
+  model_ar: string
+  model_en: string | null
+  year: number
+  city_ar: string
+  city_en: string | null
+  category: CarCategory
+  price_per_day: number
+  currency: Currency
+  seats_count: number
+  transmission: TransmissionType
+  fuel_type: FuelType
+  features: string[]
+  images: string[]
+  available_from: string | null
+  available_to: string | null
+  instant_book: boolean
+  is_last_minute: boolean
+  original_price: number | null
+  discount_percentage: number
+  status: CarStatus
+  removed_reason: string | null
+  removed_by: string | null
+  created_at: string
+  updated_at: string
+  provider?: Provider
+}
+
+export type CarBooking = {
+  id: string
+  car_id: string
+  buyer_id: string | null
+  provider_id: string
+  booked_by_marketeer_id: string | null
+  guest_token: string | null
+  guest_name: string
+  guest_phone: string | null
+  guest_email: string | null
+  pickup_date: string
+  return_date: string
+  number_of_days: number
+  price_per_day: number
+  total_amount: number
+  commission_rate: number
+  commission_amount: number
+  provider_payout: number
+  status: BookingStatus
+  transfer_receipt_url: string | null
+  transfer_confirmed_at: string | null
+  payment_reviewed_by: string | null
+  payment_reviewed_at: string | null
+  payment_rejection_reason: string | null
+  paid_at: string | null
+  refunded_at: string | null
+  refunded_by: string | null
+  cancelled_at: string | null
+  cancelled_by: string | null
+  admin_notes: string | null
+  created_at: string
+  updated_at: string
+  car?: Car
+  provider?: Provider
+  buyer?: Profile
+}
+
+export type MarketeerCustomer = {
+  id: string
+  marketeer_id: string
+  name: string | null
+  email: string | null
+  phone: string | null
+  source: 'manual' | 'excel' | 'referral'
   created_at: string
 }
 

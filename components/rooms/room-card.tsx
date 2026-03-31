@@ -6,6 +6,7 @@ import { ROOM_CATEGORIES } from '@/lib/constants'
 import { RoomStatusBadge } from './room-status-badge'
 import { RoomAmenities } from './room-amenities'
 import { RoomAvailabilityBadge } from './room-availability-badge'
+import { LastMinuteBadge } from '@/components/ui/last-minute-badge'
 import type { Room } from '@/types'
 
 type RoomCardProps = {
@@ -23,6 +24,10 @@ export function RoomCard({ room, className }: RoomCardProps) {
   const categoryLabel = ROOM_CATEGORIES[room.category as keyof typeof ROOM_CATEGORIES]
   const categoryText = categoryLabel ? (isAr ? categoryLabel.ar : categoryLabel.en) : room.category
   const formattedPrice = isAr ? formatPrice(room.price_per_night, room.currency) : formatPriceEN(room.price_per_night, room.currency)
+  const hasDiscount = room.discount_percentage > 0 && room.original_price
+  const originalFormatted = hasDiscount
+    ? (isAr ? formatPrice(room.original_price!, room.currency) : formatPriceEN(room.original_price!, room.currency))
+    : null
 
   const Arrow = isAr ? ArrowLeft : ArrowRight
 
@@ -52,8 +57,9 @@ export function RoomCard({ room, className }: RoomCardProps) {
               <BedDouble className="h-12 w-12 text-slate-300" />
             </div>
           )}
-          <div className="absolute top-3 start-3">
+          <div className="absolute top-3 start-3 flex items-center gap-2">
             <RoomStatusBadge status={room.status} />
+            {room.is_last_minute && <LastMinuteBadge discount={room.discount_percentage} />}
           </div>
           <div className="absolute top-3 end-3">
             <span className="inline-flex items-center px-3 py-1.5 rounded-full text-[10px] font-black uppercase tracking-widest bg-white/90 backdrop-blur-sm text-slate-700 border border-white/50 shadow-sm">
@@ -103,7 +109,10 @@ export function RoomCard({ room, className }: RoomCardProps) {
             <div className="flex items-end justify-between pt-5 border-t border-slate-100">
               <div className="flex flex-col">
                 <span className="text-[10px] font-bold text-slate-400 uppercase tracking-widest mb-1">{t('rooms.per_night')}</span>
-                <span className="text-2xl font-black text-slate-900 leading-none">{formattedPrice}</span>
+                {hasDiscount && (
+                  <span className="text-sm font-bold text-slate-400 line-through leading-none mb-0.5">{originalFormatted}</span>
+                )}
+                <span className={cn('text-2xl font-black leading-none', hasDiscount ? 'text-orange-600' : 'text-slate-900')}>{formattedPrice}</span>
               </div>
 
               <div className="h-10 w-10 rounded-full bg-slate-50 text-slate-400 flex items-center justify-center group-hover:bg-primary group-hover:text-white transition-all duration-300 shadow-sm group-hover:shadow-md group-hover:shadow-primary/20 ltr:group-hover:translate-x-1 rtl:group-hover:-translate-x-1 shrink-0">

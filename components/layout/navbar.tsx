@@ -46,7 +46,7 @@ export function Navbar() {
   const navItems = [
     { href: `/${locale}/trips`, label: t('nav.flights'), icon: Plane },
     { href: `/${locale}/rooms`, label: t('nav.hotels'), icon: BedDouble },
-    { href: '#', label: t('nav.cars'), icon: CarFront },
+    { href: `/${locale}/cars`, label: t('nav.cars'), icon: CarFront },
   ]
 
   const isNavItemActive = (href: string) =>

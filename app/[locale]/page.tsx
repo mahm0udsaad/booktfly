@@ -1,6 +1,7 @@
 import { getTranslations, getLocale } from 'next-intl/server'
 import { createClient } from '@/lib/supabase/server'
 import { HeroSection } from '@/components/home/hero-section'
+import { LastMinuteDeals } from '@/components/home/last-minute-deals'
 import { StatsSection } from '@/components/home/stats-section'
 import { FeaturedTrips } from '@/components/home/featured-trips'
 import { HowItWorks } from '@/components/home/how-it-works'
@@ -22,6 +23,36 @@ export default async function HomePage() {
     .order('created_at', { ascending: false })
     .limit(6)
 
+  // Fetch last-minute deals
+  const lastMinuteCutoff = new Date(Date.now() + 72 * 60 * 60 * 1000).toISOString()
+
+  const [
+    { data: lastMinuteTrips },
+    { data: lastMinuteRooms },
+    { data: lastMinuteCars },
+  ] = await Promise.all([
+    supabase
+      .from('trips')
+      .select('*, provider:providers(company_name_ar, company_name_en, provider_type)')
+      .eq('status', 'active')
+      .gt('departure_at', new Date().toISOString())
+      .lte('departure_at', lastMinuteCutoff)
+      .order('departure_at', { ascending: true })
+      .limit(6),
+    supabase
+      .from('rooms')
+      .select('*, provider:providers(company_name_ar, company_name_en, provider_type)')
+      .eq('status', 'active')
+      .eq('is_last_minute', true)
+      .limit(6),
+    supabase
+      .from('cars')
+      .select('*, provider:providers(company_name_ar, company_name_en, provider_type)')
+      .eq('status', 'active')
+      .eq('is_last_minute', true)
+      .limit(6),
+  ])
+
   // Fetch stats
   const [tripsCount, providersCount, bookingsCount] = await Promise.all([
     supabase.from('trips').select('id', { count: 'exact', head: true }).eq('status', 'active'),
@@ -32,7 +63,16 @@ export default async function HomePage() {
   return (
     <main className="overflow-x-hidden bg-[linear-gradient(180deg,#fffaf5_0%,#ffffff_26%,#f7fbff_58%,#fff8ef_100%)]">
       <HeroSection locale={locale} />
-      
+
+      {(lastMinuteTrips?.length || lastMinuteRooms?.length || lastMinuteCars?.length) ? (
+        <LastMinuteDeals
+          trips={lastMinuteTrips || []}
+          rooms={lastMinuteRooms || []}
+          cars={lastMinuteCars || []}
+          locale={locale}
+        />
+      ) : null}
+
       <div className="relative">
         <div className="pointer-events-none absolute inset-x-0 top-0 h-24 bg-gradient-to-b from-transparent to-white/70" />
         <StatsSection 

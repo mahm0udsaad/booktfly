@@ -5,6 +5,8 @@ import { notify } from '@/lib/notifications'
 import { logActivity } from '@/lib/activity-log'
 import { shortId } from '@/lib/utils'
 import { handleBookingConfirmedRewards, handleMarkeeteerDirectBookingRewards } from '@/lib/points'
+import { render } from '@react-email/components'
+import PaymentReceipt from '@/emails/payment-receipt'
 
 export async function PATCH(
   request: NextRequest,
@@ -24,7 +26,7 @@ export async function PATCH(
 
     const { data: booking } = await supabaseAdmin
       .from('bookings')
-      .select('*, trip:trips(origin_city_ar, origin_city_en, destination_city_ar, destination_city_en), provider:providers(user_id)')
+      .select('*, trip:trips(origin_city_ar, origin_city_en, destination_city_ar, destination_city_en, airline, departure_at), provider:providers(user_id)')
       .eq('id', id)
       .single()
 
@@ -86,9 +88,38 @@ export async function PATCH(
       logActivity('booking_confirmed', { userId: booking.buyer_id, metadata: { bookingId: id } })
       logActivity('payment_received', { metadata: { bookingId: id, amount: booking.total_amount } })
 
-      // Award referral points & customer first-booking bonus (off critical path)
+      // Send receipt email & award points (off critical path)
       after(async () => {
         try {
+          // Send payment receipt email
+          if (booking.buyer_id) {
+            const receiptHtml = await render(PaymentReceipt({
+              bookingRef: ref,
+              type: 'flight',
+              origin: tripInfo?.origin_city_en || tripInfo?.origin_city_ar || '',
+              destination: tripInfo?.destination_city_en || tripInfo?.destination_city_ar || '',
+              departureDate: tripInfo?.departure_at ? new Date(tripInfo.departure_at).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' }) : '',
+              airline: tripInfo?.airline,
+              seats: booking.seats_count,
+              totalAmount: booking.total_amount,
+              commissionFree: booking.total_amount,
+              passengerName: booking.passenger_name || 'Guest',
+              locale: 'en',
+            }))
+            await notify({
+              userId: booking.buyer_id,
+              type: 'payment_approved',
+              titleAr: 'إيصال الدفع',
+              titleEn: 'Payment Receipt',
+              bodyAr: `إيصال الدفع لحجزك رقم ${ref}`,
+              bodyEn: `Payment receipt for your booking #${ref}`,
+              data: { booking_id: id },
+              email: {
+                subject: `Payment Receipt - ${ref}`,
+                html: receiptHtml,
+              },
+            })
+          }
           // If booked by a marketeer directly (guest booking)
           if (booking.booked_by_marketeer_id) {
             await handleMarkeeteerDirectBookingRewards({

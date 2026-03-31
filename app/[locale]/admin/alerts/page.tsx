@@ -1,7 +1,7 @@
 'use client'
 
 import { useEffect, useState, useCallback, useRef } from 'react'
-import { useLocale, useTranslations } from 'next-intl'
+import { useLocale } from 'next-intl'
 import { createClient } from '@/lib/supabase/client'
 import { cn } from '@/lib/utils'
 import { AlertTriangle, AlertCircle, Info, X, CheckCheck, ChevronLeft, ChevronRight } from 'lucide-react'
@@ -19,7 +19,6 @@ type AdminAlert = {
   dismissed_by: string | null
   dismissed_at: string | null
   created_at: string
-  dismisser?: { full_name: string } | null
 }
 
 type FilterTab = 'active' | 'all' | 'critical' | 'dismissed'
@@ -57,7 +56,6 @@ function SeverityIcon({ severity, className }: { severity: string; className?: s
 }
 
 export default function AdminAlerts() {
-  const t = useTranslations()
   const locale = useLocale()
   const supabase = createClient()
   const [alerts, setAlerts] = useState<AdminAlert[]>([])
@@ -71,27 +69,26 @@ export default function AdminAlerts() {
 
   const fetchAlerts = useCallback(async () => {
     setLoading(true)
-
-    let query = supabase
-      .from('admin_alerts')
-      .select('*, dismisser:profiles!dismissed_by(full_name)', { count: 'exact' })
-
-    if (filter === 'active') query = query.eq('dismissed', false)
-    else if (filter === 'critical') query = query.eq('severity', 'critical')
-    else if (filter === 'dismissed') query = query.eq('dismissed', true)
-
-    query = query
-      .order('created_at', { ascending: false })
-      .range(page * PER_PAGE, (page + 1) * PER_PAGE - 1)
-
-    const { data, count } = await query
-    const sorted = ((data as AdminAlert[]) || []).sort((a, b) => {
-      const sevDiff = (SEVERITY_ORDER[a.severity] ?? 9) - (SEVERITY_ORDER[b.severity] ?? 9)
-      if (sevDiff !== 0) return sevDiff
-      return new Date(b.created_at).getTime() - new Date(a.created_at).getTime()
-    })
-    setAlerts(sorted)
-    setTotal(count || 0)
+    try {
+      const res = await fetch(`/api/admin/alerts?filter=${filter}&page=${page}`)
+      if (!res.ok) {
+        setAlerts([])
+        setTotal(0)
+        setLoading(false)
+        return
+      }
+      const { alerts: data, total: count } = await res.json()
+      const sorted = ((data as AdminAlert[]) || []).sort((a, b) => {
+        const sevDiff = (SEVERITY_ORDER[a.severity] ?? 9) - (SEVERITY_ORDER[b.severity] ?? 9)
+        if (sevDiff !== 0) return sevDiff
+        return new Date(b.created_at).getTime() - new Date(a.created_at).getTime()
+      })
+      setAlerts(sorted)
+      setTotal(count || 0)
+    } catch {
+      setAlerts([])
+      setTotal(0)
+    }
     setLoading(false)
   }, [filter, page])
 
@@ -344,7 +341,6 @@ export default function AdminAlerts() {
                     {alert.dismissed && alert.dismissed_at && (
                       <p className="text-xs text-muted-foreground mt-2">
                         {locale === 'ar' ? 'تم الرفض' : 'Dismissed'}
-                        {alert.dismisser?.full_name && ` ${locale === 'ar' ? 'بواسطة' : 'by'} ${alert.dismisser.full_name}`}
                         {' · '}
                         {relativeTime(alert.dismissed_at, locale)}
                       </p>

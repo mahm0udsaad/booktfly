@@ -3,6 +3,7 @@ export const APP_NAME_AR = 'بوكت فلاي'
 export const APP_DOMAIN = 'booktfly.com'
 
 export const DEFAULT_COMMISSION_RATE = 10.0
+export const LAST_MINUTE_THRESHOLD_HOURS = 72
 
 export const MAX_SEATS_PER_BOOKING = 10
 
@@ -146,3 +147,46 @@ export const APPLICATION_STATUS_COLORS: Record<string, string> = {
   approved: 'bg-success/10 text-success',
   rejected: 'bg-destructive/10 text-destructive',
 }
+
+export const CAR_CATEGORIES = {
+  sedan: { ar: 'سيدان', en: 'Sedan' },
+  suv: { ar: 'دفع رباعي', en: 'SUV' },
+  luxury: { ar: 'فاخرة', en: 'Luxury' },
+  van: { ar: 'فان', en: 'Van' },
+  economy: { ar: 'اقتصادية', en: 'Economy' },
+} as const
+
+export const CAR_FEATURES = {
+  gps: { ar: 'نظام ملاحة', en: 'GPS' },
+  bluetooth: { ar: 'بلوتوث', en: 'Bluetooth' },
+  cruise_control: { ar: 'مثبت السرعة', en: 'Cruise Control' },
+  backup_camera: { ar: 'كاميرا خلفية', en: 'Backup Camera' },
+  sunroof: { ar: 'فتحة سقف', en: 'Sunroof' },
+  leather_seats: { ar: 'مقاعد جلد', en: 'Leather Seats' },
+  heated_seats: { ar: 'مقاعد مدفأة', en: 'Heated Seats' },
+  apple_carplay: { ar: 'أبل كاربلاي', en: 'Apple CarPlay' },
+  android_auto: { ar: 'أندرويد أوتو', en: 'Android Auto' },
+  child_seat: { ar: 'كرسي أطفال', en: 'Child Seat' },
+  usb_charger: { ar: 'شاحن USB', en: 'USB Charger' },
+  spare_tire: { ar: 'إطار احتياطي', en: 'Spare Tire' },
+} as const
+
+export const TRANSMISSION_TYPES = {
+  automatic: { ar: 'أوتوماتيك', en: 'Automatic' },
+  manual: { ar: 'عادي', en: 'Manual' },
+} as const
+
+export const FUEL_TYPES = {
+  petrol: { ar: 'بنزين', en: 'Petrol' },
+  diesel: { ar: 'ديزل', en: 'Diesel' },
+  electric: { ar: 'كهربائي', en: 'Electric' },
+  hybrid: { ar: 'هجين', en: 'Hybrid' },
+} as const
+
+export const CAR_STATUS_COLORS: Record<string, string> = {
+  active: 'bg-success/10 text-success',
+  deactivated: 'bg-warning/10 text-warning',
+  removed: 'bg-destructive/10 text-destructive',
+}
+
+export const MAX_DAYS_PER_CAR_BOOKING = 30

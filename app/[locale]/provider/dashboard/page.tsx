@@ -81,10 +81,10 @@ export default async function ProviderDashboardPage() {
   }
 
   const statCards = [
-    { label: t('active_trips'), value: stats.activeTrips, icon: Plane, color: 'text-primary', bg: 'bg-primary/10' },
-    { label: t('total_bookings'), value: stats.totalBookings, icon: BookOpen, color: 'text-amber-600', bg: 'bg-amber-500/10' },
-    { label: t('monthly_revenue'), value: formatPrice(stats.monthlyRevenue), icon: DollarSign, color: 'text-emerald-500', bg: 'bg-emerald-500/10' },
-    { label: t('seats_sold'), value: stats.seatsSold, icon: Armchair, color: 'text-amber-500', bg: 'bg-amber-500/10' },
+    { label: t('active_trips'), value: stats.activeTrips, icon: Plane, color: 'text-primary', bg: 'bg-primary/10', href: `/${locale}/provider/trips` },
+    { label: t('total_bookings'), value: stats.totalBookings, icon: BookOpen, color: 'text-amber-600', bg: 'bg-amber-500/10', href: `/${locale}/provider/bookings` },
+    { label: t('monthly_revenue'), value: formatPrice(stats.monthlyRevenue), icon: DollarSign, color: 'text-emerald-500', bg: 'bg-emerald-500/10', href: `/${locale}/provider/revenue` },
+    { label: t('seats_sold'), value: stats.seatsSold, icon: Armchair, color: 'text-amber-500', bg: 'bg-amber-500/10', href: `/${locale}/provider/bookings` },
   ]
 
   return (
@@ -106,8 +106,9 @@ export default async function ProviderDashboardPage() {
       {/* Stat Cards */}
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
         {statCards.map((card, idx) => (
-          <div
+          <Link
             key={card.label}
+            href={card.href}
             className="group bg-white border border-slate-200 rounded-[2rem] p-6 shadow-sm hover:shadow-xl transition-all duration-300 hover:-translate-y-1 animate-fade-in-up"
             style={{ animationDelay: `${idx * 100}ms` }}
           >
@@ -123,7 +124,7 @@ export default async function ProviderDashboardPage() {
               <p className="text-sm font-bold text-slate-400 uppercase tracking-widest mb-1">{card.label}</p>
               <p className="text-3xl font-black text-slate-900 tracking-tighter">{card.value}</p>
             </div>
-          </div>
+          </Link>
         ))}
       </div>
 

@@ -5,6 +5,8 @@ import { notify } from '@/lib/notifications'
 import { logActivity } from '@/lib/activity-log'
 import { shortId } from '@/lib/utils'
 import { handleBookingConfirmedRewards } from '@/lib/points'
+import { render } from '@react-email/components'
+import PaymentReceipt from '@/emails/payment-receipt'
 
 export async function PATCH(
   request: NextRequest,
@@ -24,7 +26,7 @@ export async function PATCH(
 
     const { data: booking } = await supabaseAdmin
       .from('room_bookings')
-      .select('*, room:rooms(name_ar, name_en, city_ar, city_en), provider:providers(user_id)')
+      .select('*, room:rooms(name_ar, name_en, city_ar, city_en, check_in_date), provider:providers(user_id)')
       .eq('id', id)
       .single()
 
@@ -82,10 +84,39 @@ export async function PATCH(
 
       logActivity('room_booking_confirmed', { metadata: { bookingId: id } })
 
-      // Award referral points & customer first-booking bonus (off critical path)
+      // Send receipt email & award points (off critical path)
       if (booking.buyer_id) {
         after(async () => {
           try {
+            // Send payment receipt email
+            const roomName = roomInfo?.name_en || roomInfo?.name_ar || ''
+            const roomCity = roomInfo?.city_en || roomInfo?.city_ar || ''
+            const receiptHtml = await render(PaymentReceipt({
+              bookingRef: ref,
+              type: 'room',
+              origin: roomName,
+              destination: roomCity,
+              departureDate: booking.check_in_date || '',
+              nights: booking.number_of_days,
+              totalAmount: booking.total_amount,
+              commissionFree: booking.total_amount,
+              passengerName: booking.guest_name || 'Guest',
+              locale: 'en',
+            }))
+            await notify({
+              userId: booking.buyer_id!,
+              type: 'room_booking_confirmed',
+              titleAr: 'إيصال الدفع',
+              titleEn: 'Payment Receipt',
+              bodyAr: `إيصال الدفع لحجز الغرفة رقم ${ref}`,
+              bodyEn: `Payment receipt for room booking #${ref}`,
+              data: { room_booking_id: id },
+              email: {
+                subject: `Payment Receipt - ${ref}`,
+                html: receiptHtml,
+              },
+            })
+
             await handleBookingConfirmedRewards({
               buyerId: booking.buyer_id!,
               bookingId: id,
@@ -94,7 +125,7 @@ export async function PATCH(
               refLabel: `#${ref}`,
             })
           } catch (err) {
-            console.error('Room booking rewards error:', err)
+            console.error('Room booking rewards/receipt error:', err)
           }
         })
       }

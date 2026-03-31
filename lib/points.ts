@@ -16,7 +16,7 @@ export async function handleMarkeeteerDirectBookingRewards({
   bookingId: string
   totalAmount: number
   passengerName: string
-  type: 'flight' | 'room'
+  type: 'flight' | 'room' | 'car'
   refLabel: string
 }) {
   const { data: marketeer } = await supabaseAdmin
@@ -27,10 +27,10 @@ export async function handleMarkeeteerDirectBookingRewards({
 
   if (!marketeer) return
 
-  const pointsForSale = type === 'flight' ? 500 : 300
-  const eventType = type === 'flight' ? 'sell_ticket' : 'sell_hotel'
-  const labelAr = type === 'flight' ? 'تذكرة طيران' : 'حجز فندق'
-  const labelEn = type === 'flight' ? 'flight ticket' : 'hotel room'
+  const pointsForSale = type === 'flight' ? 500 : type === 'car' ? 400 : 300
+  const eventType = type === 'flight' ? 'sell_ticket' : type === 'car' ? 'sell_car' : 'sell_hotel'
+  const labelAr = type === 'flight' ? 'تذكرة طيران' : type === 'car' ? 'حجز سيارة' : 'حجز فندق'
+  const labelEn = type === 'flight' ? 'flight ticket' : type === 'car' ? 'car rental' : 'hotel room'
 
   await supabaseAdmin.from('flypoints_transactions').insert({
     marketeer_id: marketeer.user_id,
@@ -99,7 +99,7 @@ export async function handleBookingConfirmedRewards({
   buyerId: string
   bookingId: string
   totalAmount: number
-  type: 'flight' | 'room'
+  type: 'flight' | 'room' | 'car'
   refLabel: string
 }) {
   // 1. Customer first-booking bonus (500 pts)
@@ -149,10 +149,10 @@ export async function handleBookingConfirmedRewards({
 
   if (!marketeer) return
 
-  const pointsForSale = type === 'flight' ? 500 : 300
-  const eventType = type === 'flight' ? 'sell_ticket' : 'sell_hotel'
-  const labelAr = type === 'flight' ? 'تذكرة طيران' : 'حجز فندق'
-  const labelEn = type === 'flight' ? 'flight ticket' : 'hotel room'
+  const pointsForSale = type === 'flight' ? 500 : type === 'car' ? 400 : 300
+  const eventType = type === 'flight' ? 'sell_ticket' : type === 'car' ? 'sell_car' : 'sell_hotel'
+  const labelAr = type === 'flight' ? 'تذكرة طيران' : type === 'car' ? 'حجز سيارة' : 'حجز فندق'
+  const labelEn = type === 'flight' ? 'flight ticket' : type === 'car' ? 'car rental' : 'hotel room'
 
   // Award marketeer points for the sale
   await supabaseAdmin.from('flypoints_transactions').insert({

@@ -12,16 +12,18 @@ import {
   Users,
   BedDouble,
   Clock,
+  CarFront,
 } from 'lucide-react'
 import { capitalizeFirst, formatPrice, formatPriceEN, shortId } from '@/lib/utils'
 import { BookingStatusBadge } from '@/components/bookings/booking-status-badge'
 import { EmptyState } from '@/components/shared/empty-state'
 import { CardSkeleton } from '@/components/shared/loading-skeleton'
-import type { Booking, RoomBooking } from '@/types'
+import type { Booking, RoomBooking, CarBooking } from '@/types'
 
 type BuyerBookingItem =
   | { kind: 'flight'; item: Booking }
   | { kind: 'room'; item: RoomBooking }
+  | { kind: 'car'; item: CarBooking }
 
 export default function MyBookingsPage() {
   const t = useTranslations()
@@ -36,14 +38,16 @@ export default function MyBookingsPage() {
   useEffect(() => {
     async function fetchBookings() {
       try {
-        const [flightRes, roomRes] = await Promise.all([
+        const [flightRes, roomRes, carRes] = await Promise.all([
           fetch('/api/bookings/mine'),
           fetch('/api/room-bookings/mine'),
+          fetch('/api/car-bookings/mine'),
         ])
-        const [flightData, roomData] = await Promise.all([flightRes.json(), roomRes.json()])
+        const [flightData, roomData, carData] = await Promise.all([flightRes.json(), roomRes.json(), carRes.json()])
         const merged: BuyerBookingItem[] = [
           ...((flightData.bookings || []).map((item: Booking) => ({ kind: 'flight' as const, item }))),
           ...((roomData.bookings || []).map((item: RoomBooking) => ({ kind: 'room' as const, item }))),
+          ...((carData.bookings || []).map((item: CarBooking) => ({ kind: 'car' as const, item }))),
         ].sort((a, b) => new Date(b.item.created_at).getTime() - new Date(a.item.created_at).getTime())
         setBookings(merged)
       } catch {
@@ -80,10 +84,13 @@ export default function MyBookingsPage() {
         <div className="space-y-4">
           {bookings.map(({ kind, item }) => {
             const isRoom = kind === 'room'
-            const booking = isRoom ? null : item as Booking
+            const isCar = kind === 'car'
+            const booking = !isRoom && !isCar ? item as Booking : null
             const roomBooking = isRoom ? item as RoomBooking : null
+            const carBooking = isCar ? item as CarBooking : null
             const trip = booking?.trip
             const room = roomBooking?.room
+            const car = carBooking?.car
             const originCity = trip
               ? isAr
                 ? trip.origin_city_ar
@@ -102,6 +109,8 @@ export default function MyBookingsPage() {
               : ''
             const roomName = room ? (isAr ? room.name_ar : (room.name_en || room.name_ar)) : ''
             const roomCity = room ? (isAr ? room.city_ar : capitalizeFirst(room.city_en || room.city_ar)) : ''
+            const carName = car ? (isAr ? `${car.brand_ar} ${car.model_ar}` : `${car.brand_en || car.brand_ar} ${car.model_en || car.model_ar}`) : ''
+            const carCity = car ? (isAr ? car.city_ar : capitalizeFirst(car.city_en || car.city_ar)) : ''
             const createdDate = new Date(item.created_at).toLocaleDateString(
               isAr ? 'ar-SA' : 'en-US',
               { year: 'numeric', month: 'short', day: 'numeric' }
@@ -110,7 +119,7 @@ export default function MyBookingsPage() {
             return (
               <Link
                 key={item.id}
-                href={isRoom ? `/${locale}/my-bookings/rooms/${item.id}` : `/${locale}/my-bookings/${item.id}`}
+                href={isCar ? `/${locale}/my-bookings/cars/${item.id}` : isRoom ? `/${locale}/my-bookings/rooms/${item.id}` : `/${locale}/my-bookings/${item.id}`}
                 className="block"
               >
                 <div className="rounded-xl border bg-card p-5 hover:shadow-md hover:border-accent/30 transition-all">
@@ -120,7 +129,7 @@ export default function MyBookingsPage() {
                         #{shortId(item.id)}
                       </span>
                       <span className="rounded-full bg-slate-100 px-2 py-0.5 text-[10px] font-bold uppercase tracking-widest text-slate-600">
-                        {isRoom ? (isAr ? 'غرفة' : 'Room') : (isAr ? 'رحلة' : 'Flight')}
+                        {isCar ? (isAr ? 'سيارة' : 'Car') : isRoom ? (isAr ? 'غرفة' : 'Room') : (isAr ? 'رحلة' : 'Flight')}
                       </span>
                       <span>{createdDate}</span>
                     </div>
@@ -167,6 +176,27 @@ export default function MyBookingsPage() {
                     </>
                   )}
 
+                  {carBooking && car && (
+                    <>
+                      <div className="flex items-center gap-3 mb-2">
+                        <CarFront className="h-4 w-4 text-accent shrink-0" />
+                        <span className="font-semibold">{carName}</span>
+                      </div>
+
+                      <div className="flex flex-wrap items-center gap-4 text-sm text-muted-foreground mb-3">
+                        <span className="flex items-center gap-1">
+                          <Calendar className="h-3.5 w-3.5" />
+                          {carBooking.pickup_date}
+                        </span>
+                        <span className="flex items-center gap-1">
+                          <Clock className="h-3.5 w-3.5" />
+                          {carBooking.number_of_days} {isAr ? 'يوم' : 'days'}
+                        </span>
+                        <span>{carCity}</span>
+                      </div>
+                    </>
+                  )}
+
                   <div className="flex items-center justify-between pt-3 border-t">
                     <div className="flex items-center gap-4 text-sm">
                       {booking && (
@@ -181,9 +211,15 @@ export default function MyBookingsPage() {
                           {roomBooking.number_of_people} {isAr ? 'ضيف' : 'guest(s)'}
                         </span>
                       )}
+                      {carBooking && (
+                        <span className="flex items-center gap-1 text-muted-foreground">
+                          <Clock className="h-3.5 w-3.5" />
+                          {carBooking.number_of_days} {isAr ? 'يوم' : 'day(s)'}
+                        </span>
+                      )}
                     </div>
                     <span className="text-lg font-bold text-accent">
-                      {fmt(item.total_amount, booking?.trip?.currency || room?.currency)}
+                      {fmt(item.total_amount, booking?.trip?.currency || room?.currency || car?.currency)}
                     </span>
                   </div>
                 </div>

@@ -14,6 +14,8 @@ import {
   X,
   LogOut,
   ExternalLink,
+  Contact,
+  Send,
 } from 'lucide-react'
 import { useState } from 'react'
 import { cn } from '@/lib/utils'
@@ -24,6 +26,8 @@ import { LanguageSwitcher } from '@/components/layout/language-switcher'
 const NAV_ITEMS = [
   { key: 'dashboard', icon: LayoutDashboard, href: '/marketeer/dashboard' },
   { key: 'users', icon: Users, href: '/marketeer/users' },
+  { key: 'customers', icon: Contact, href: '/marketeer/customers' },
+  { key: 'campaigns', icon: Send, href: '/marketeer/campaigns' },
   { key: 'revenue', icon: BarChart3, href: '/marketeer/revenue' },
   { key: 'wallet', icon: Wallet, href: '/marketeer/wallet' },
   { key: 'reviews', icon: Star, href: '/marketeer/reviews' },
@@ -33,6 +37,8 @@ const NAV_ITEMS = [
 const LABELS: Record<string, { ar: string; en: string }> = {
   dashboard: { ar: 'الرئيسية', en: 'Dashboard' },
   users: { ar: 'المستخدمون', en: 'Users' },
+  customers: { ar: 'العملاء', en: 'Customers' },
+  campaigns: { ar: 'الحملات', en: 'Campaigns' },
   revenue: { ar: 'الإيرادات', en: 'Revenue' },
   wallet: { ar: 'المحفظة', en: 'Wallet' },
   reviews: { ar: 'التقييمات', en: 'Reviews' },

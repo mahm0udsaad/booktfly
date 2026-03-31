@@ -28,6 +28,10 @@ export type ActivityEventType =
   | 'email_registered'
   | 'seat_reserved'
   | 'seat_released'
+  | 'car_created'
+  | 'car_removed'
+  | 'car_booking_created'
+  | 'car_booking_confirmed'
 
 export async function logActivity(
   eventType: ActivityEventType,

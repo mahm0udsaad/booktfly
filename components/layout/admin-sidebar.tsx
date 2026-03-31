@@ -26,6 +26,7 @@ import {
   Bell,
   BarChart3,
   TrendingUp,
+  CarFront,
   type LucideIcon,
 } from 'lucide-react'
 import { useState, useEffect, useCallback, useRef } from 'react'
@@ -79,6 +80,13 @@ const NAV_GROUPS: NavGroup[] = [
     ],
   },
   {
+    key: 'group_cars',
+    items: [
+      { key: 'cars', icon: CarFront, href: '/admin/cars' },
+      { key: 'car_bookings', icon: CarFront, href: '/admin/car-bookings', badgeKey: 'carBookings' },
+    ],
+  },
+  {
     key: 'group_providers',
     items: [
       { key: 'applications', icon: FileText, href: '/admin/applications', badgeKey: 'applications' },
@@ -121,14 +129,16 @@ function useBadgeCounts() {
       { count: withdrawals },
       { count: bookings },
       { count: roomBookings },
-      { count: alerts },
+      { count: carBookings },
+      alertsRes,
     ] = await Promise.all([
       supabase.from('provider_applications').select('*', { count: 'exact', head: true }).eq('status', 'pending_review'),
       supabase.from('marketeer_applications').select('*', { count: 'exact', head: true }).eq('status', 'pending_review'),
       supabase.from('withdrawal_requests').select('*', { count: 'exact', head: true }).eq('status', 'pending'),
       supabase.from('bookings').select('*', { count: 'exact', head: true }).eq('status', 'payment_processing'),
       supabase.from('room_bookings').select('*', { count: 'exact', head: true }).eq('status', 'payment_processing'),
-      supabase.from('admin_alerts').select('*', { count: 'exact', head: true }).eq('dismissed', false),
+      supabase.from('car_bookings').select('*', { count: 'exact', head: true }).eq('status', 'payment_processing'),
+      fetch('/api/admin/alerts?filter=active&page=0').then(r => r.ok ? r.json() : { total: 0 }).catch(() => ({ total: 0 })),
     ])
 
     setCounts({
@@ -137,7 +147,8 @@ function useBadgeCounts() {
       withdrawals: withdrawals ?? 0,
       bookings: bookings ?? 0,
       roomBookings: roomBookings ?? 0,
-      alerts: alerts ?? 0,
+      alerts: alertsRes.total ?? 0,
+      carBookings: carBookings ?? 0,
     })
   }, [supabase])
 
@@ -279,6 +290,9 @@ export function AdminSidebar() {
     return pathname === fullPath || pathname.startsWith(fullPath + '/')
   }
 
+  const onAlertsPage = pathname.startsWith(`/${locale}/admin/alerts`)
+  const effectiveBadges = onAlertsPage ? { ...badges, alerts: 0 } : badges
+
   const handleSignOut = async () => {
     await signOutAndRedirect(supabase, locale)
   }
@@ -298,7 +312,7 @@ export function AdminSidebar() {
             key={group.key}
             group={group}
             isActive={isActive}
-            badges={badges}
+            badges={effectiveBadges}
             locale={locale}
             t={t}
             onNavigate={closeMobile}

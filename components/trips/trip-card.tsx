@@ -6,6 +6,9 @@ import { CABIN_CLASSES } from '@/lib/constants'
 import { TripStatusBadge } from './trip-status-badge'
 import { SeatsIndicator } from './seats-indicator'
 import { getCountryCode } from '@/lib/countries'
+import { isLastMinute } from '@/lib/last-minute'
+import { LastMinuteBadge } from '@/components/ui/last-minute-badge'
+import { CountdownTimer } from '@/components/ui/countdown-timer'
 import type { Trip } from '@/types'
 
 type TripCardProps = {
@@ -22,6 +25,12 @@ export function TripCard({ trip, className }: TripCardProps) {
   const destCity = isAr ? trip.destination_city_ar : capitalizeFirst(trip.destination_city_en || trip.destination_city_ar)
   const cabinClass = CABIN_CLASSES[trip.cabin_class]
   const formattedPrice = isAr ? formatPrice(trip.price_per_seat, trip.currency) : formatPriceEN(trip.price_per_seat, trip.currency)
+  const lastMinute = isLastMinute(trip.departure_at)
+  const remaining = trip.total_seats - trip.booked_seats
+  const hasDiscount = trip.discount_percentage > 0 && trip.original_price
+  const originalFormatted = hasDiscount
+    ? (isAr ? formatPrice(trip.original_price!, trip.currency) : formatPriceEN(trip.original_price!, trip.currency))
+    : null
 
   const Arrow = isAr ? ArrowLeft : ArrowRight
 
@@ -67,7 +76,10 @@ export function TripCard({ trip, className }: TripCardProps) {
                 </span>
               </div>
             </div>
-            <TripStatusBadge status={trip.status} />
+            <div className="flex items-center gap-2">
+              {lastMinute && <LastMinuteBadge discount={trip.discount_percentage} />}
+              <TripStatusBadge status={trip.status} />
+            </div>
           </div>
 
           {/* Route Section */}
@@ -112,7 +124,7 @@ export function TripCard({ trip, className }: TripCardProps) {
           </div>
 
           {/* Meta Information Pills */}
-          <div className="grid grid-cols-2 items-center gap-2 mb-6">
+          <div className={cn('grid items-center gap-2 mb-6', lastMinute ? 'grid-cols-3' : 'grid-cols-2')}>
              <div className="flex items-center gap-1.5 bg-slate-50 px-2.5 py-1.5 rounded-lg border border-slate-100 text-slate-600">
                 <Calendar className="h-3.5 w-3.5 text-slate-400" />
                 <span className="text-xs font-semibold">{departureDate}</span>
@@ -121,6 +133,9 @@ export function TripCard({ trip, className }: TripCardProps) {
                 <Clock className="h-3.5 w-3.5 text-slate-400" />
                 <span className="text-xs font-semibold">{departureTime}</span>
              </div>
+             {lastMinute && (
+               <CountdownTimer targetDate={trip.departure_at} compact />
+             )}
           </div>
 
           <div className="mt-auto">
@@ -134,11 +149,21 @@ export function TripCard({ trip, className }: TripCardProps) {
                 />
              </div>
 
+             {/* Urgency indicator */}
+             {lastMinute && remaining <= 3 && remaining > 0 && (
+               <p className="text-xs font-bold text-destructive mb-3 animate-pulse">
+                 {isAr ? `متبقي ${remaining} فقط!` : `Only ${remaining} left!`}
+               </p>
+             )}
+
              {/* Footer Price & CTA */}
              <div className="flex items-end justify-between pt-5 border-t border-slate-100">
                <div className="flex flex-col">
                  <span className="text-[10px] font-bold text-slate-400 uppercase tracking-widest mb-1">{t('common.per_seat')}</span>
-                 <span className="text-2xl font-black text-slate-900 leading-none">{formattedPrice}</span>
+                 {hasDiscount && (
+                   <span className="text-sm font-bold text-slate-400 line-through leading-none mb-0.5">{originalFormatted}</span>
+                 )}
+                 <span className={cn('text-2xl font-black leading-none', hasDiscount ? 'text-orange-600' : 'text-slate-900')}>{formattedPrice}</span>
                </div>
                
                <div className="h-10 w-10 rounded-full bg-slate-200 text-slate-400 flex items-center justify-center transition-all duration-300 shadow-sm group-hover:bg-[var(--color-primary)] group-hover:text-white group-hover:shadow-md group-hover:shadow-[color:var(--color-primary)]/20 ltr:group-hover:translate-x-1 rtl:group-hover:-translate-x-1 shrink-0">
