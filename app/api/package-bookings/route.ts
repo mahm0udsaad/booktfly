@@ -39,6 +39,8 @@ export async function POST(request: NextRequest) {
       end_date,
     } = parsed.data
 
+    const guest_token = body.guest_token as string | undefined
+
     const { data: pkg, error: pkgError } = await supabase
       .from('packages')
       .select('*, provider:providers(*)')
